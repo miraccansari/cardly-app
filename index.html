@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardly - Vanilla</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23000'/%3E%3Ctext x='32' y='40' font-size='28' text-anchor='middle' fill='white' font-family='Arial' font-weight='700'%3EC%2B%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg-main: #F6F7FB; --bg-surface: #FFFFFF; --bg-hover: #F2F4F8;
+    --primary: #4255FF; --primary-hover: #3244D6; --primary-light: #E8EAFF;
+    --text-dark: #2E3856; --text-muted: #586380; --text-light: #939BB4;
+    --border: #EDEFF4; --border-dark: #D9DCE8;
+    --success: #23B26D; --success-light: #E4F5EB;
+    --danger: #FF725B; --danger-light: #FFEAE6;
+    --warning: #FFB300; --warning-light: #FFF4D9;
+    --shadow-sm: 0 2px 4px rgba(46, 56, 86, 0.04);
+    --shadow-md: 0 4px 12px rgba(46, 56, 86, 0.08);
+    --shadow-lg: 0 12px 24px rgba(46, 56, 86, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg-main); color: var(--text-dark); font-family: 'Inter', sans-serif; min-height: 100%; overflow-x: hidden; }
+  h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--text-dark); letter-spacing: -0.5px; }
+  button, input, textarea, select { font-family: 'Inter', sans-serif; outline: none; }
+
+  .app { display: flex; min-height: 100vh; max-width: 1400px; margin: 0 auto; background: var(--bg-main); }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar { width: 300px; flex-shrink: 0; padding: 32px 24px; background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-y: auto;}
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+  .brand .mark { background: linear-gradient(135deg, var(--primary), #8224E3); color: white; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-weight: 900; font-size: 22px; letter-spacing: -1px; box-shadow: 0 4px 12px rgba(66, 85, 255, 0.3); }
+  .brand h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  
+  .new-set-btn { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 24px; transition: all 0.2s; box-shadow: 0 4px 10px rgba(66, 85, 255, 0.24); }
+  .new-set-btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+  .folder-group { margin-bottom: 24px; }
+  .folder-header { font-size: 13px; font-weight: 800; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; padding-left: 8px;}
+  .set-list { list-style: none; margin: 0; padding: 0; }
+  .set-list-item { display: flex; flex-direction: column; width: 100%; text-align: left; background: none; border: none; padding: 12px 16px; border-radius: 8px; cursor: pointer; color: var(--text-dark); margin-bottom: 4px; transition: all 0.2s; }
+  .set-list-item:hover { background: var(--bg-hover); }
+  .set-list-item.active { background: var(--primary-light); border-left: 4px solid var(--primary); }
+  .set-list-item.active .name { color: var(--primary); font-weight: 700; }
+  .set-list-item .name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .set-list-item .count { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .empty-list { color: var(--text-muted); font-size: 14px; padding: 12px 16px; text-align: center; background: var(--bg-hover); border-radius: 8px; }
+
+  /* ---------- Main Layout ---------- */
+  .main { flex: 1; padding: 40px 48px; min-width: 0; }
+  .main.full-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; background: var(--bg-main); flex-direction: column;}
+  
+  .welcome { max-width: 600px; margin-top: 10vh; }
+  .welcome h2 { font-size: 32px; margin-bottom: 16px; }
+  .welcome p { color: var(--text-muted); line-height: 1.6; font-size: 16px; }
+
+  /* ---------- Overview ---------- */
+  .set-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+  .set-title-row h2 { font-size: 36px; margin: 0 0 8px; }
+  .set-desc { color: var(--text-muted); font-size: 16px; margin: 0 0 16px; max-width: 60ch; line-height: 1.5; }
+  
+  .set-banner { position: relative; width: 100%; min-height: 280px; border-radius: 24px; background-color: var(--primary); background-size: cover; background-position: center; margin-bottom: 32px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; box-shadow: var(--shadow-md); }
+  .banner-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%); z-index: 1; }
+  .banner-actions { position: relative; z-index: 2; display: flex; justify-content: flex-end; padding: 24px; gap: 12px; }
+  .banner-btn { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; color: white; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;}
+  .banner-btn:hover { background: rgba(255, 255, 255, 0.25); }
+  .banner-btn.danger:hover { background: rgba(255, 76, 76, 0.8); border-color: transparent;}
+  
+  .banner-content { position: relative; z-index: 2; padding: 24px 32px 32px; color: white; }
+  .banner-content h2 { font-size: 40px; color: white; margin-bottom: 12px; letter-spacing: -0.5px;}
+  .banner-content p { font-size: 16px; color: rgba(255,255,255,0.85); margin: 0 0 16px 0; max-width: 80ch; line-height: 1.6; font-weight: 400;}
+  .banner-meta { font-size: 14px; color: rgba(255,255,255,0.7); font-weight: 500; }
+  
+  .mastery-wrap { margin-bottom: 32px; background: var(--bg-surface); padding: 20px; border-radius: 16px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+  .mastery-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: 700; color: var(--text-dark); }
+  .mastery-track { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; display: flex; }
+  .mastery-fill { height: 100%; transition: width 0.5s ease; }
+  .m-mastered { background: var(--success); }
+  .m-learning { background: var(--warning); }
+  .m-not { background: transparent; }
+  .mastery-labels { display: flex; gap: 16px; margin-top: 12px; font-size: 13px; color: var(--text-muted); font-weight: 600; }
+  .ml-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
+  .icon-btn { background: var(--bg-surface); border: 1px solid var(--border-dark); border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-dark); transition: all 0.2s; box-shadow: var(--shadow-sm); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .icon-btn:hover { background: var(--bg-hover); }
+  .icon-btn.danger { color: var(--danger); border-color: var(--danger-light); }
+  .icon-btn.danger:hover { background: var(--danger-light); border-color: var(--danger); }
+
+  .action-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 48px; }
+  .action-card { background: var(--bg-surface); border-radius: 16px; padding: 24px 16px; text-align: center; cursor: pointer; border: 2px solid transparent; box-shadow: var(--shadow-md); transition: all 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .action-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+  .action-card .emoji { font-size: 40px; margin-bottom: 12px; }
+  .action-card h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-dark); }
+  .action-card p { font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4; }
+  .action-card.disabled { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+
+  .term-list-header { font-size: 20px; margin-bottom: 16px; color: var(--text-dark); display: flex; align-items: center; justify-content: space-between; }
+  .term-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 24px; background: var(--bg-surface); padding: 20px 24px; border-radius: 12px; margin-bottom: 12px; box-shadow: var(--shadow-sm); border-left: 4px solid var(--border-dark); align-items: center;}
+  .term-col { font-size: 16px; color: var(--text-dark); line-height: 1.5; font-weight: 500;}
+  .term-col.left { font-weight: 600; border-right: 1px solid var(--border); padding-right: 24px; }
+  .term-mastery-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+  .badge-mastered { background: var(--success-light); color: var(--success); }
+  .badge-learning { background: var(--warning-light); color: var(--warning); }
+  .badge-new { background: var(--bg-hover); color: var(--text-muted); }
+
+  /* ---------- Full Screen Nav ---------- */
+  .fs-header { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 0 8px; z-index: 50;}
+  .close-fullscreen-btn { background: var(--bg-surface); border: 1px solid var(--border-dark); border-radius: 50%; width: 42px; height: 42px; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md); transition: all 0.2s; color: var(--text-muted); }
+  .close-fullscreen-btn:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger); transform: scale(1.05) rotate(90deg); }
+
+  /* ---------- Edit Mode & Bulk Import ---------- */
+  .field-label { display: block; font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .set-form input[type=text], .set-form textarea, .set-form select { width: 100%; border: 2px solid var(--border); background: var(--bg-surface); border-radius: 12px; padding: 16px; font-size: 16px; color: var(--text-dark); margin-bottom: 24px; transition: border-color 0.2s; }
+  .set-form input[type=text]:focus, .set-form textarea:focus, .set-form select:focus { border-color: var(--primary); }
+  .set-form textarea { resize: vertical; min-height: 80px; }
+  
+  .image-upload-wrap { margin-bottom: 32px; background: var(--bg-surface); border: 1px solid var(--border); padding: 24px; border-radius: 16px; }
+  .image-preview { width: 100%; height: 180px; border-radius: 12px; background-size: cover; background-position: center; margin-top: 16px; border: 1px dashed var(--border-dark); }
+  
+  .bulk-import-area { display: none; }
+  .bulk-import-area.active { display: block; animation: fadeIn 0.3s; }
+  .cards-edit-area.hidden { display: none; }
+  
+  .card-row { display: grid; grid-template-columns: 40px 1fr 1fr 40px; gap: 16px; align-items: start; background: var(--bg-surface); border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s; }
+  .card-row:focus-within { box-shadow: var(--shadow-md); border-left: 4px solid var(--primary); }
+  .card-row .idx { color: var(--text-light); font-size: 18px; font-weight: 800; padding-top: 12px; }
+  .card-row textarea { width: 100%; border: none; border-bottom: 2px solid var(--border); background: transparent; padding: 8px 0; font-size: 16px; color: var(--text-dark); border-radius: 0; resize: none; min-height: 44px; margin-bottom: 0; font-weight: 500;}
+  .card-row textarea:focus { border-bottom-color: var(--primary); box-shadow: none; }
+  
+  .remove-card-btn { background: none; border: none; color: var(--text-light); font-size: 24px; cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s; }
+  .remove-card-btn:hover { color: var(--danger); background: var(--danger-light); }
+  
+  .edit-actions-row { display: flex; gap: 16px; margin-top: 16px; }
+  .add-card-btn, .bulk-btn { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--bg-surface); border: 2px dashed var(--border-dark); border-radius: 16px; padding: 20px; color: var(--text-dark); font-weight: 600; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+  .add-card-btn:hover, .bulk-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+  
+  .save-row { margin-top: 40px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 24px; }
+  .primary-btn { background: var(--primary); color: white; border: none; border-radius: 12px; padding: 14px 28px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(66, 85, 255, 0.3); transition: all 0.2s; letter-spacing: 0.5px;}
+  .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(66, 85, 255, 0.4); }
+
+  /* ---------- Flashcards Mode ---------- */
+  .study-wrap { width: 100%; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .s-progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; display: flex; margin-bottom: 16px; }
+  .s-prog-green { background: var(--success); transition: width 0.3s; }
+  .s-prog-orange { background: var(--warning); transition: width 0.3s; }
+  .s-prog-text { width: 100%; text-align: center; color: var(--text-muted); font-weight: 600; font-size: 13px; margin-bottom: 16px; }
+  .flashcard-wrapper { position: relative; width: 100%; height: 42vh; min-height: 280px; margin-bottom: 24px; }
+  .flashcard { position: absolute; inset: 0; cursor: pointer; background: var(--bg-surface); border-radius: 16px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 32px; border: 2px solid transparent; transition: border-color 0.2s; }
+  .flashcard:hover { border-color: var(--primary-light); }
+  .face-text { font-size: 30px; font-weight: 600; line-height: 1.3; color: var(--text-dark); max-width: 90%; }
+  .card-inner-badge { position: absolute; top: 20px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; background: var(--bg-hover); color: var(--text-muted); }
+  
+  .anim-slide-out-left { animation: slideOutLeft 0.3s forwards ease-in; }
+  .anim-slide-out-right { animation: slideOutRight 0.3s forwards ease-in; }
+  .anim-slide-in { animation: slideIn 0.35s forwards cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes slideOutLeft { to { transform: translateX(-50vw) rotate(-10deg); opacity: 0; } }
+  @keyframes slideOutRight { to { transform: translateX(50vw) rotate(10deg); opacity: 0; } }
+  @keyframes slideIn { from { transform: translateX(30px) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+
+  .study-controls { display: flex; justify-content: center; align-items: center; gap: 16px; width: 100%; max-width: 700px;}
+  .flip-btn-pill { background: var(--bg-surface); border: 2px solid var(--border-dark); border-radius: 50px; padding: 16px 64px; font-size: 18px; font-weight: 700; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-sm); transition: all 0.2s; }
+  .flip-btn-pill:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+  
+  .rating-group { display: flex; gap: 10px; width: 100%; }
+  .rating-btn { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 12px 6px; background: var(--bg-surface); border: 2px solid var(--border-dark); border-radius: 14px; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+  .rating-btn:hover { background: var(--bg-hover); transform: translateY(-2px); }
+  .rating-btn .r-title { font-weight: 700; color: var(--text-dark); margin-bottom: 2px; font-size: 14px; }
+  .rating-btn .r-sub { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  
+  .rating-btn.r-1:hover { border-color: var(--text-muted); }
+  .rating-btn.r-2:hover { border-color: var(--danger); color: var(--danger); }
+  .rating-btn.r-3:hover { border-color: var(--warning); color: var(--warning); }
+  .rating-btn.r-4:hover { border-color: var(--success); color: var(--success); }
+
+  .study-done { text-align: center; padding: 60px 30px; background: var(--bg-surface); border-radius: 20px; box-shadow: var(--shadow-lg); width: 100%; }
+  .study-done .big { font-size: 40px; font-weight: 900; color: var(--primary); margin-bottom: 12px; }
+
+  /* ---------- Quiz Setup & Quiz Mode ---------- */
+  .quiz-setup-wrap { background: var(--bg-surface); padding: 40px; border-radius: 20px; box-shadow: var(--shadow-lg); text-align: center; max-width: 600px; width: 100%; z-index: 10;}
+  .quiz-wrap { width: 100%; max-width: 800px; margin: 0 auto; z-index: 10;}
+  
+  .q-top-bars { display: flex; gap: 6px; width: 100%; margin-bottom: 12px; justify-content: center; }
+  .q-bar-segment { flex: 1; height: 8px; border-radius: 4px; background: var(--border); transition: background 0.3s; }
+  .q-bar-segment.correct { background: var(--success); }
+  .q-bar-segment.wrong { background: var(--warning); }
+  .q-bar-segment.active { background: var(--text-dark); }
+
+  .quiz-combo-indicator { width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+  .q-card { background: var(--bg-surface); border-radius: 16px; padding: 24px 32px; box-shadow: var(--shadow-lg); margin-bottom: 12px; position: relative; }
+  .q-eyebrow { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; }
+  .q-prompt { font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 12px; color: var(--text-dark); }
+  
+  .encouragement-msg { color: #E65100; font-size: 14px; font-weight: 700; margin-bottom: 12px; animation: fadeIn 0.3s ease-out; }
+
+  .q-options { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .q-option { 
+    text-align: left; background: var(--bg-surface); border: 2px solid var(--border-dark); border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 500; cursor: pointer; color: var(--text-dark); transition: all 0.2s; 
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .q-option:hover:not(:disabled) { border-color: var(--primary); background: var(--bg-hover); }
+  
+  .q-option.correct { background: var(--success-light); border: 2px dashed var(--success); color: var(--success); font-weight: 600; }
+  .q-option.wrong { background: var(--warning-light); border: 2px solid var(--warning); color: #E65100; font-weight: 600; }
+  .q-option:disabled { cursor: default; }
+
+  .quiz-summary { text-align: center; padding: 60px 40px; background: var(--bg-surface); border-radius: 20px; box-shadow: var(--shadow-lg); }
+  .score-big { font-size: 80px; font-weight: 800; color: var(--primary); margin: 16px 0; }
+  
+  .bottom-action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 0 4px; }
+  .bottom-info-text { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+
+  /* ---------- Match Game ---------- */
+  .match-wrap { width: 100%; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; z-index: 10;}
+  .match-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .match-timer { font-size: 32px; font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; }
+  .match-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; }
+  .match-item { background: var(--bg-surface); border: 2px solid var(--border-dark); border-radius: 16px; padding: 24px 16px; text-align: center; font-size: 16px; font-weight: 600; color: var(--text-dark); cursor: pointer; display: flex; align-items: center; justify-content: center; min-height: 120px; transition: all 0.2s; box-shadow: var(--shadow-sm); user-select: none; word-break: break-word;}
+  .match-item:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .match-item.selected { background: var(--primary-light); border-color: var(--primary); color: var(--primary); transform: scale(1.05); box-shadow: var(--shadow-md); }
+  .match-item.matched { visibility: hidden; opacity: 0; pointer-events: none; transform: scale(0.8); transition: all 0.3s ease-out; }
+  .match-item.error { animation: shakeError 0.4s; background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
+
+  .minimal-toast { position: fixed; top: 32px; left: 50%; transform: translateX(-50%) translateY(-20px); background: rgba(35, 42, 46, 0.9); color: white; padding: 12px 24px; border-radius: 40px; font-size: 15px; font-weight: 600; opacity: 0; z-index: 10000; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); animation: toastAnim 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .t-green { border-color: rgba(35, 178, 109, 0.5); box-shadow: 0 8px 24px rgba(35, 178, 109, 0.2); }
+  .t-orange { border-color: rgba(255, 152, 0, 0.5); box-shadow: 0 8px 24px rgba(255, 152, 0, 0.2); }
+  .t-red { border-color: rgba(244, 67, 54, 0.5); box-shadow: 0 8px 24px rgba(244, 67, 54, 0.2); }
+  .t-gold { border-color: rgba(255, 215, 0, 0.5); box-shadow: 0 8px 24px rgba(255, 215, 0, 0.2); }
+  
+  @keyframes toastAnim { 0% { opacity: 0; transform: translateX(-50%) translateY(-20px); } 15% { opacity: 1; transform: translateX(-50%) translateY(0); } 85% { opacity: 1; transform: translateX(-50%) translateY(0); } 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+  @keyframes shakeError { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-8px);} 75% {transform: translateX(8px);} }
+  @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+
+  @media (max-width: 840px) {
+    .app { flex-direction: column; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 16px; max-height: 300px; }
+    .main { padding: 16px; }
+    .action-cards { grid-template-columns: 1fr; }
+    .term-row { grid-template-columns: 1fr; gap: 8px; }
+    .term-col.left { border-right: none; border-bottom: 1px dashed var(--border); padding-right: 0; padding-bottom: 12px; margin-bottom: 4px;}
+    .match-grid { grid-template-columns: 1fr 1fr; }
+    .set-banner { min-height: 220px; }
+    .banner-content h2 { font-size: 28px; }
+  }
+
+  /* ---------- Cardly 2.0 additions ---------- */
+  .cl-dashboard { max-width: 1180px; margin: 0 auto; }
+  .cl-hero { background: linear-gradient(135deg, var(--primary), #7b2cff); color:#fff; border-radius:24px; padding:28px; box-shadow:var(--shadow-lg); margin-bottom:22px; }
+  .cl-hero h2 { margin:0 0 8px; font-size:30px; color:#fff !important; }
+  .cl-hero p { margin:0; opacity:1; line-height:1.5; color:rgba(255,255,255,0.92) !important; }
+  .cl-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .cl-stat { background:var(--bg-surface); border:1px solid var(--border); border-radius:18px; padding:18px; box-shadow:var(--shadow-sm); }
+  .cl-stat .v { font-size:28px; font-weight:800; color:var(--text-dark); }
+  .cl-stat .l { color:var(--text-muted); font-size:13px; font-weight:700; margin-top:4px; }
+  .cl-panel { background:var(--bg-surface); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow-sm); padding:20px; margin-bottom:18px; }
+  .cl-panel-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+  .cl-panel-head h3 { margin:0; }
+  .cl-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .cl-set-card { border:1px solid var(--border); border-radius:16px; padding:16px; display:flex; justify-content:space-between; gap:12px; align-items:center; }
+  .cl-set-card .title { font-weight:800; color:var(--text-dark); }
+  .cl-set-card .meta { color:var(--text-muted); font-size:12px; margin-top:4px; }
+  .cl-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .cl-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border-radius:999px; font-size:12px; font-weight:700; background:var(--bg-hover); color:var(--text-muted); }
+  .cl-filterbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0; }
+  .cl-search { flex:1; min-width:240px; }
+  .cl-mini-select { padding:10px 12px !important; }
+  .cl-progress { height:10px; border-radius:999px; background:var(--border); overflow:hidden; margin-top:10px; }
+  .cl-progress > div { height:100%; background:linear-gradient(90deg,var(--primary),#7b2cff); }
+  .cl-due-card { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px; border:1px solid var(--border); border-radius:14px; margin-bottom:10px; }
+  .cl-due-card .term { font-weight:750; color:var(--text-dark); }
+  .cl-due-card .def { color:var(--text-muted); font-size:13px; margin-top:4px; }
+  .cl-icon-btn { border:1px solid var(--border-dark); background:var(--bg-surface); color:var(--text-dark); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700; }
+  .cl-icon-btn:hover { border-color:var(--primary); color:var(--primary); }
+  .cl-danger { color:var(--danger); }
+  .cl-import-preview { margin-top:14px; border:1px solid var(--border); border-radius:16px; overflow:auto; max-height:300px; }
+  .cl-import-preview table { width:100%; border-collapse:collapse; font-size:13px; }
+  .cl-import-preview th,.cl-import-preview td { padding:10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top; }
+  .cl-ok { color:var(--success); font-weight:800; }
+  .cl-bad { color:var(--danger); font-weight:800; }
+  .cl-result-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px; }
+  .cl-metric-list { display:grid; gap:10px; }
+  .cl-metric-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .cl-bar { flex:1; height:10px; background:var(--border); border-radius:999px; overflow:hidden; }
+  .cl-bar > span { display:block; height:100%; background:var(--primary); }
+  .cl-key-hint { font-size:12px; color:var(--text-muted); margin-top:10px; }
+  .cl-focus { border:2px solid var(--primary); box-shadow:0 0 0 4px rgba(66,85,255,.08); }
+  .cl-streak { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--bg-hover); font-weight:800; color:var(--text-dark); }
+  .cl-daily-btn { width:100%; margin-top:14px; }
+  .cl-empty { color:var(--text-muted); padding:18px 4px; text-align:center; }
+  .cl-session-note { color:var(--text-muted); font-size:13px; margin-top:6px; }
+  @media (max-width: 980px) {
+    .cl-stat-grid { grid-template-columns:1fr 1fr; }
+    .cl-grid-2 { grid-template-columns:1fr; }
+  }
+  @media (max-width: 840px) {
+    .cl-stat-grid { grid-template-columns:1fr 1fr; }
+    .cl-hero h2 { font-size:24px; }
+    .cl-search { min-width:180px; }
+    .rating-group { flex-wrap:wrap; }
+    .rating-btn { min-width:calc(50% - 5px); }
+    .flashcard-wrapper { height:48vh; }
+    .face-text { font-size:24px; }
+  }
+  @media (max-width: 520px) {
+    .cl-stat-grid { grid-template-columns:1fr; }
+    .cl-hero { padding:22px; }
+    .cl-due-card { align-items:flex-start; flex-direction:column; }
+    .cl-icon-btn { width:100%; }
+  }
+
+
+  .speak-btn { background: var(--bg-hover); border:1px solid var(--border-dark); border-radius:50%; width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; color:var(--text-dark); transition: all .2s; flex-shrink:0; z-index:5; }
+  .speak-btn:hover { background: var(--primary-light); border-color:var(--primary); color:var(--primary); transform: scale(1.06); }
+  .speak-btn.sm { width:28px; height:28px; font-size:13px; }
+  .term-thumb { width:40px; height:40px; border-radius:10px; object-fit:cover; flex-shrink:0; border:1px solid var(--border-dark); }
+  .card-thumb-row { display:flex; align-items:center; gap:12px; grid-column: 1 / -1; margin-top:8px; }
+  .qcard-image { max-width:100%; max-height:150px; border-radius:14px; margin-bottom:14px; object-fit:cover; }
+
+  .charms-wrap { width:100%; max-width:560px; margin:0 auto; z-index:10; }
+  .charms-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:0 4px; }
+  .charms-stat { font-weight:800; font-size:18px; color:var(--text-dark); }
+  .charms-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; background:var(--bg-surface); padding:10px; border-radius:16px; box-shadow: var(--shadow-lg); }
+  .charm-tile { aspect-ratio: 1 / 1; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; cursor:pointer; border:2px solid transparent; transition: transform .12s, box-shadow .12s; }
+  .charm-tile:hover { transform: scale(1.05); }
+  .charm-tile.selected { border-color: var(--text-dark); transform: scale(0.92); box-shadow: 0 0 0 3px rgba(46,56,86,0.12) inset; }
+  .charm-c0 { background:#FFD166; }
+  .charm-c1 { background:#EF476F; }
+  .charm-c2 { background:#06D6A0; }
+  .charm-c3 { background:#118AB2; }
+  .charm-c4 { background:#8338EC; }
+  .charm-cq { background: var(--primary); }
+
+  .cl-hero h2{ color:#fff !important; }
+  .cl-hero p{ color:rgba(255,255,255,0.92) !important; }
+  .cl-hero .cl-daily-btn{ color:var(--primary) !important; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+(function() {
+  "use strict";
+  var STORAGE_KEY = "cardly_vanilla_v1";
+  var OLD_KEYS = ["cardlySets_KPSS_v5","cardlySets_KPSS_v7","cardlySets_KPSS_v8","cardlySets_KPSS_v9","cardlySets_KPSS_v9_FINAL","cardlySets_KPSS_v9_FINAL_COĞRAFYA_GERÇEK","cardlySets_KPSS_v10_CARPIM_USLU_FINAL","cardlySets_KPSS_v10_SESLI_FINAL","cardlySets_KPSS","cardlySets","cardlySets_KPSS_v10_CARPIM_USLU"];
+
+  // ---------------- Charms oyunu sabitleri ----------------
+  var CHARM_TYPES = 5;
+  var CHARM_QUESTION = 5;
+  var CHARM_ROWS = 7;
+  var CHARM_COLS = 6;
+  var CHARM_ICON = ["🟠","🔵","🟢","🟣","🟡"];
+
+  function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+  var demoSets = []; // VANILLA - içi boş temel versiyon
+
+  function loadSets() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+      // Eski KPSS anahtarlarından taşıma yapma - vanilla temiz başlasın
+      // Ama kullanıcı isterse eski veriyi görmek için localStorage'ı temizlemesi yeterli
+    } catch(e){}
+    return [];
+  }
+
+  function saveSets(sets) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sets));
+    } catch(e){}
+  }
+
+var state = {
+    sets: loadSets(),
+    activeSetId: null,
+    mode: "overview", 
+    studyQueue: [], 
+    studyTotalCount: 0,
+    studyFlipped: false, 
+    studyAnimating: false,
+    quizDirection: "mixed", quizLength: 20, quizQuestions: [], quizIndex: 0, quizStreak: 0,
+    matchItems: [], matchSelected: null, matchMatchedCount: 0, matchStartTime: 0, matchTimerInt: null, matchTime: "00.0s",
+    bulkImportMode: false
+  };
+
+  if (state.sets.length && !state.activeSetId) state.activeSetId = state.sets[0].id;
+  function persist() { saveSets(state.sets); }
+  function getActiveSet() { return state.sets.find(s => s.id === state.activeSetId) || null; }
+
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    for (var k in attrs) {
+      if (attrs[k] == null || attrs[k] === false) continue; 
+      if (k === "class") e.className = attrs[k];
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (k.indexOf("on") === 0) e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (children || []).forEach(c => {
+      if (c == null) return;
+      if (typeof c === "string" || typeof c === "number") e.appendChild(document.createTextNode(String(c)));
+      else e.appendChild(c);
+    });
+    return e;
+  }
+  
+  function shuffle(arr) { var a=arr.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+
+  function getMasteryStats(s) {
+    var valid = s.cards.filter(c => c.term.trim() && c.def.trim());
+    if(valid.length === 0) return { mastered: 0, learning: 0, not: 0, total: 0 };
+    var m = valid.filter(c => c.mastery >= 3).length;
+    var l = valid.filter(c => c.mastery > 0 && c.mastery < 3).length;
+    var n = valid.length - (m + l);
+    return { mastered: m, learning: l, not: n, total: valid.length };
+  }
+  
+  function updateMastery(setId, cardId, isCorrect) {
+    var s = state.sets.find(x => x.id === setId);
+    if(!s) return;
+    var c = s.cards.find(x => x.id === cardId);
+    if(!c) return;
+    if(isCorrect) { if(c.mastery < 3) c.mastery++; } 
+    else { c.mastery = 0; }
+    persist();
+  }
+
+  function playComboAnim(streak) {
+    if (![3, 10, 20, 50].includes(streak)) return;
+    var emoji = streak === 50 ? "🏆" : (streak >= 20 ? "🔥" : (streak >= 10 ? "⚡" : "🟢"));
+    var text = streak + " Doğru Serisi!";
+    var colorCls = streak === 50 ? "t-gold" : (streak >= 20 ? "t-red" : (streak >= 10 ? "t-orange" : "t-green"));
+    var ov = document.createElement('div');
+    ov.className = 'minimal-toast ' + colorCls;
+    ov.innerHTML = emoji + " " + text;
+    document.body.appendChild(ov);
+    setTimeout(() => { if(ov.parentNode) ov.parentNode.removeChild(ov); }, 2500);
+  }
+
+  var encouragementQuotes = [
+    "Sorun değil. Öğrenmeye devam ettiğini unutma!",
+    "Hata yapmak öğrenme sürecinin en güzel parçasıdır!",
+    "Hiç sorun değil, bir sonrakinde yapacağına eminim!",
+    "Pes etmek yok, her yanlış seni doğruya bir adım daha yaklaştırır.",
+    "Zorluklar seni daha güçlü ve bilgili yapar, devam et!",
+    "Böyle öğreniliyor işte, canını sıkma yola devam!",
+    "Küçük bir takılma, hedefine ulaşmana engel değil!",
+    "Önemli olan hata yapmak değil, ondan ders çıkarıp ilerlemek.",
+    "Harika gidiyorsun, bu sadece minik bir detaydı!",
+    "Beynimiz zorlandıkça gelişir, harika bir antrenman oluyor!"
+  ];
+
+  function getRandomEncouragement() {
+    return encouragementQuotes[Math.floor(Math.random() * encouragementQuotes.length)];
+  }
+
+  // ---------------- Sesli Okuma (Türkçe TTS) ----------------
+  var ttsVoiceCache = null;
+  function pickTrVoice() {
+    try {
+      if (!('speechSynthesis' in window)) return null;
+      var voices = window.speechSynthesis.getVoices() || [];
+      return voices.find(v => v.lang && v.lang.toLowerCase().indexOf('tr') === 0) || null;
+    } catch (e) { return null; }
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = function () { ttsVoiceCache = pickTrVoice(); };
+    ttsVoiceCache = pickTrVoice();
+  }
+  function speakText(text) {
+    try {
+      if (!text || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(String(text));
+      u.lang = 'tr-TR';
+      if (ttsVoiceCache) u.voice = ttsVoiceCache;
+      u.rate = 0.95;
+      u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // ---------------- Minimal ses efekti (doğru cevap) ----------------
+  var _audioCtx = null;
+  function getAudioCtx() {
+    try {
+      if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (_audioCtx.state === 'suspended') _audioCtx.resume();
+      return _audioCtx;
+    } catch (e) { return null; }
+  }
+  function playTone(freq, startTime, duration, ctx, peak) {
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(peak, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(startTime); osc.stop(startTime + duration + 0.03);
+  }
+  function playCorrectChime() {
+    try {
+      var ctx = getAudioCtx(); if (!ctx) return;
+      var t = ctx.currentTime;
+      playTone(659.25, t, 0.13, ctx, 0.07);        // E5 - yumuşak, kısa
+      playTone(987.77, t + 0.08, 0.20, ctx, 0.06); // B5 - hafif yükselen ikinci nota
+    } catch (e) {}
+  }
+
+  // ---------------- Kart görseli yükleme (terime örnek görsel) ----------------
+  function buildCardImageRow(c) {
+    var row = el("div", { class: "card-thumb-row" });
+    if (c.image) {
+      row.appendChild(el("img", { src: c.image, class: "term-thumb", style: "width:56px;height:56px;" }));
+    }
+    var fileInput = el("input", { type: "file", accept: "image/png, image/jpeg, image/webp", style: "display:none;" });
+    fileInput.addEventListener("change", function (e) {
+      var file = e.target.files[0]; if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (evt) {
+        var img = new Image();
+        img.onload = function () {
+          var canvas = document.createElement("canvas");
+          var MAX = 500;
+          var w = img.width, h = img.height;
+          if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+          else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          c.image = canvas.toDataURL("image/jpeg", 0.75);
+          persist(); render();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    row.appendChild(fileInput);
+    row.appendChild(el("button", { class: "icon-btn", style: "padding:8px 12px; font-size:13px;", onclick: () => fileInput.click() }, [c.image ? "🖼️ Görseli Değiştir" : "🖼️ Görsel Ekle"]));
+    if (c.image) {
+      row.appendChild(el("button", { class: "icon-btn danger", style: "padding:8px 12px; font-size:13px;", onclick: () => { c.image = null; persist(); render(); } }, ["Kaldır"]));
+    }
+    return row;
+  }
+
+  // ---------------- Set kapak görseli yükleme (banner için) ----------------
+  function buildSetImageRow(s) {
+    var wrapDiv = el("div", { class: "image-upload-wrap" });
+    var fileInput = el("input", { type: "file", accept: "image/png, image/jpeg, image/webp", style: "display:none;" });
+    fileInput.addEventListener("change", function (e) {
+      var file = e.target.files[0]; if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (evt) {
+        var img = new Image();
+        img.onload = function () {
+          var canvas = document.createElement("canvas");
+          var MAX_W = 1200, MAX_H = 800;
+          var w = img.width, h = img.height;
+          if (w > h) { if (w > MAX_W) { h *= MAX_W / w; w = MAX_W; } }
+          else { if (h > MAX_H) { w *= MAX_H / h; h = MAX_H; } }
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          s.coverImage = canvas.toDataURL("image/jpeg", 0.8);
+          persist(); render();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    var btnRow = el("div", { style: "display:flex; gap:12px; align-items:center; flex-wrap:wrap;" });
+    btnRow.appendChild(fileInput);
+    btnRow.appendChild(el("button", { class: "icon-btn", onclick: () => fileInput.click() }, [s.coverImage ? "🖼️ Görseli Değiştir" : "🖼️ Görsel Yükle"]));
+    if (s.coverImage) {
+      btnRow.appendChild(el("button", { class: "icon-btn danger", onclick: () => { s.coverImage = null; persist(); render(); } }, ["Kaldır"]));
+    }
+    wrapDiv.appendChild(btnRow);
+    if (s.coverImage) {
+      wrapDiv.appendChild(el("div", { class: "image-preview", style: "background-image:url('" + s.coverImage + "');" }));
+    } else {
+      wrapDiv.appendChild(el("p", { style: "color:var(--text-muted); font-size:13px; margin:12px 0 0 0;" }, ["Görsel yüklemezsen setin üstünde Cardly'nin varsayılan mor-mavi degradesi kullanılır."]));
+    }
+    return wrapDiv;
+  }
+
+  // ---------------- UI: Sidebar ----------------
+  function createNewSet() {
+    var newSet = { id: uid(), title: "Yeni Çalışma Seti", folder: "Klasörsüz", description: "", bestMatchTime: null, coverImage: null, cards: [{ id:uid(), term: "", def: "", mastery: 0, image: null }, { id:uid(), term: "", def: "", mastery: 0, image: null }] };
+    state.sets.unshift(newSet); state.activeSetId = newSet.id; state.mode = "edit"; state.bulkImportMode = false; persist(); render();
+  }
+
+  // ---------------- UI: FullScreen Shell ----------------
+  function renderFSWrapper(contentEl) {
+    var main = el("div", { class: "main full-screen" });
+    main.appendChild(el("div", {class:"fs-header"}, [
+      el("div",{},[]), 
+      el("button", { class: "close-fullscreen-btn", onclick: () => { clearInterval(state.matchTimerInt); state.mode = "overview"; render(); } }, ["✕"])
+    ]));
+    main.appendChild(contentEl);
+    return main;
+  }
+
+  // ---------------- Mode: Match Game ----------------
+  function startMatch(s) {
+    var v = shuffle(s.cards.filter(c => c.term.trim() && c.def.trim())).slice(0,6);
+    var items = [];
+    v.forEach(c => { items.push({ id: c.id+"_t", text: c.term, pair: c.id+"_d", cId: c.id }); items.push({ id: c.id+"_d", text: c.def, pair: c.id+"_t", cId: c.id }); });
+    state.matchItems = shuffle(items);
+    state.matchSelected = null; state.matchMatchedCount = 0;
+    state.matchStartTime = Date.now(); state.matchTime = "00.0s";
+    clearInterval(state.matchTimerInt);
+    state.matchTimerInt = setInterval(() => {
+        var el = document.getElementById("m-timer-val");
+        if(el) {
+           var diff = (Date.now() - state.matchStartTime)/1000;
+           state.matchTime = diff.toFixed(1) + "s"; el.innerText = state.matchTime;
+        }
+    }, 100);
+    state.mode = "match"; render();
+  }
+
+  function renderMatch(s) {
+    var wrap = el("div", { class: "match-wrap" });
+    if(state.matchMatchedCount >= state.matchItems.length) {
+       clearInterval(state.matchTimerInt);
+       if(!s.bestMatchTime || parseFloat(state.matchTime) < parseFloat(s.bestMatchTime)) { s.bestMatchTime = state.matchTime; persist(); }
+       wrap.appendChild(el("div", { class: "quiz-summary" }, [
+         el("h2", { style: "font-size:40px; margin-bottom:16px;" }, ["Tebrikler!"]),
+         el("p", { style: "font-size:20px; margin-bottom:32px; color:var(--text-muted);" }, ["Her şeyi eşleştirdin."]),
+         el("div", { class: "score-big", style:"margin-bottom:48px;" }, [state.matchTime]),
+         el("button", { class: "primary-btn", style:"border-radius:40px; padding:16px 32px;", onclick: () => startMatch(s) }, ["Tekrar Oyna"])
+       ]));
+       return wrap;
+    }
+
+    wrap.appendChild(el("div", { class: "match-header" }, [
+        el("div", {style:"font-weight:700; color:var(--text-muted);"}, ["Doğru ikilileri eşleştir"]),
+        el("div", { class: "match-timer", id: "m-timer-val" }, [state.matchTime])
+    ]));
+
+    var grid = el("div", { class: "match-grid" });
+    state.matchItems.forEach(item => {
+      var isSel = state.matchSelected && state.matchSelected.id === item.id;
+      var isMatched = item.matched;
+      var cls = "match-item" + (isSel ? " selected" : "") + (isMatched ? " matched" : "");
+      
+      var btn = el("button", { class: cls, id: "mi_"+item.id }, [item.text]);
+      btn.onclick = function() {
+        if(item.matched || isSel) return;
+        if(!state.matchSelected) {
+           state.matchSelected = item; render();
+        } else {
+           if(state.matchSelected.pair === item.id) {
+               item.matched = true; state.matchSelected.matched = true;
+               state.matchMatchedCount += 2; state.matchSelected = null;
+               playCorrectChime();
+               render();
+           } else {
+               var e1 = document.getElementById("mi_"+item.id);
+               var e2 = document.getElementById("mi_"+state.matchSelected.id);
+               if(e1) { e1.classList.remove('error'); void e1.offsetWidth; e1.classList.add('error'); }
+               if(e2) { e2.classList.remove('selected'); e2.classList.remove('error'); void e2.offsetWidth; e2.classList.add('error'); }
+               state.matchSelected = null;
+           }
+        }
+      };
+      grid.appendChild(btn);
+    });
+    wrap.appendChild(grid);
+    return wrap;
+  }
+
+  // ---------------- Mod: Charms (renk eşleştirmeli bulmaca) ----------------
+  function charmIdx(r, c) { return r * CHARM_COLS + c; }
+
+  function randomCharmType() {
+    if (Math.random() < 0.10) return CHARM_QUESTION;
+    return Math.floor(Math.random() * CHARM_TYPES);
+  }
+
+  function findCharmMatches(grid) {
+    var matched = new Set();
+    for (var r = 0; r < CHARM_ROWS; r++) {
+      var c = 0;
+      while (c < CHARM_COLS) {
+        var t = grid[charmIdx(r, c)];
+        var start = c; c++;
+        while (c < CHARM_COLS && grid[charmIdx(r, c)] === t) c++;
+        if (c - start >= 3) { for (var k = start; k < c; k++) matched.add(charmIdx(r, k)); }
+      }
+    }
+    for (var c2 = 0; c2 < CHARM_COLS; c2++) {
+      var r2 = 0;
+      while (r2 < CHARM_ROWS) {
+        var t2 = grid[charmIdx(r2, c2)];
+        var start2 = r2; r2++;
+        while (r2 < CHARM_ROWS && grid[charmIdx(r2, c2)] === t2) r2++;
+        if (r2 - start2 >= 3) { for (var k2 = start2; k2 < r2; k2++) matched.add(charmIdx(k2, c2)); }
+      }
+    }
+    return matched;
+  }
+
+  function collapseCharmGrid(grid, clearedSet) {
+    clearedSet.forEach(function (idx) { grid[idx] = null; });
+    for (var c = 0; c < CHARM_COLS; c++) {
+      var stack = [];
+      for (var r = CHARM_ROWS - 1; r >= 0; r--) {
+        var v = grid[charmIdx(r, c)];
+        if (v !== null) stack.push(v);
+      }
+      for (var r2 = CHARM_ROWS - 1, si = 0; r2 >= 0; r2--, si++) {
+        grid[charmIdx(r2, c)] = si < stack.length ? stack[si] : randomCharmType();
+      }
+    }
+  }
+
+  function buildInitialCharmGrid() {
+    var grid = [];
+    for (var i = 0; i < CHARM_ROWS * CHARM_COLS; i++) grid.push(randomCharmType());
+    for (var pass = 0; pass < 6; pass++) {
+      var matches = findCharmMatches(grid);
+      if (!matches.size) break;
+      matches.forEach(function (idx) { grid[idx] = randomCharmType(); });
+    }
+    return grid;
+  }
+
+  function startCharms(s) {
+    if (validCards(s).length < 4) { alert("Bu oyun için en az 4 dolu kart gerekir."); return; }
+    state.charmsGrid = buildInitialCharmGrid();
+    state.charmsSelected = null;
+    state.charmsScore = 0;
+    state.charmsMoves = 20;
+    state.charmsPendingQuestion = null;
+    state.charmsStartedAt = nowMs();
+    state.charmsLogged = false;
+    state.mode = "charms";
+    render();
+  }
+
+  function queueCharmsQuestion(s) {
+    var v = validCards(s);
+    if (!v.length) return;
+    var c = shuffle(v)[0];
+    var others = shuffle(v.filter(x => x.id !== c.id)).slice(0, 3);
+    var opts = shuffle([c.def].concat(others.map(x => x.def)));
+    state.charmsPendingQuestion = { cardId: c.id, term: c.term, correct: c.def, options: opts, answered: null };
+  }
+
+  function answerCharmsQuestion(opt) {
+    var q = state.charmsPendingQuestion;
+    if (!q || q.answered) return;
+    q.answered = opt;
+    var cor = opt === q.correct;
+    var s = getActiveSet();
+    var card = s && s.cards.find(c => c.id === q.cardId);
+    if (cor) { state.charmsMoves += 3; state.charmsScore += 30; playCorrectChime(); }
+    if (card) updateMastery(s.id, card.id, cor);
+    render();
+    setTimeout(function () { state.charmsPendingQuestion = null; render(); }, 1100);
+  }
+
+  function tryCharmsSwap(i, j) {
+    var grid = state.charmsGrid;
+    var tmp = grid[i]; grid[i] = grid[j]; grid[j] = tmp;
+    var matches = findCharmMatches(grid);
+    if (!matches.size) {
+      var tmp2 = grid[i]; grid[i] = grid[j]; grid[j] = tmp2;
+      return false;
+    }
+    var s = getActiveSet();
+    var questionHit = false, totalCleared = 0;
+    while (matches.size) {
+      matches.forEach(function (idx) { if (grid[idx] === CHARM_QUESTION) questionHit = true; });
+      totalCleared += matches.size;
+      collapseCharmGrid(grid, matches);
+      matches = findCharmMatches(grid);
+    }
+    state.charmsScore += totalCleared * 10;
+    state.charmsMoves = Math.max(0, state.charmsMoves - 1);
+    if (totalCleared) playCorrectChime();
+    if (questionHit && s) queueCharmsQuestion(s);
+    return true;
+  }
+
+  function onCharmClick(idx) {
+    if (state.charmsPendingQuestion || state.charmsMoves <= 0) return;
+    if (state.charmsSelected === null) { state.charmsSelected = idx; render(); return; }
+    if (state.charmsSelected === idx) { state.charmsSelected = null; render(); return; }
+    var sel = state.charmsSelected;
+    var rSel = Math.floor(sel / CHARM_COLS), cSel = sel % CHARM_COLS;
+    var r = Math.floor(idx / CHARM_COLS), c = idx % CHARM_COLS;
+    var adjacent = (Math.abs(rSel - r) + Math.abs(cSel - c)) === 1;
+    if (!adjacent) { state.charmsSelected = idx; render(); return; }
+    tryCharmsSwap(sel, idx);
+    state.charmsSelected = null;
+    render();
+  }
+
+  function renderCharms(s) {
+    var wrap = el("div", { class: "charms-wrap" });
+    if (state.charmsMoves <= 0 && !state.charmsPendingQuestion) {
+      if (!state.charmsLogged) {
+        logActivity(s.id, "charms", 0, 0, nowMs() - state.charmsStartedAt, { score: state.charmsScore });
+        state.charmsLogged = true;
+        if (!s.bestCharmsScore || state.charmsScore > s.bestCharmsScore) { s.bestCharmsScore = state.charmsScore; persist(); }
+      }
+      wrap.appendChild(el("div", { class: "quiz-summary" }, [
+        el("h2", { style: "font-size:32px;margin-bottom:12px;" }, ["Charms Bitti 💎"]),
+        el("div", { class: "score-big" }, [String(state.charmsScore)]),
+        el("p", { class: "score-sub" }, ["Rekor: " + (s.bestCharmsScore || state.charmsScore)]),
+        el("div", { class: "cl-result-actions" }, [
+          el("button", { class: "primary-btn", style: "border-radius:40px;padding:14px 24px;", onclick: () => startCharms(s) }, ["Tekrar Oyna"]),
+          el("button", { class: "cl-icon-btn", onclick: () => { state.mode = "overview"; render(); } }, ["Sete dön"])
+        ])
+      ]));
+      return wrap;
+    }
+
+    wrap.appendChild(el("div", { class: "charms-header" }, [
+      el("div", { class: "charms-stat" }, ["💎 " + state.charmsScore]),
+      el("div", { class: "charms-stat" }, ["🎯 " + state.charmsMoves + " hamle"])
+    ]));
+
+    if (state.charmsPendingQuestion) {
+      var q = state.charmsPendingQuestion;
+      var qc = el("div", { class: "q-card", style: "text-align:center;" });
+      qc.appendChild(el("div", { class: "q-eyebrow" }, ["❓ SORU CHARM'I — DOĞRU CEVAP +3 HAMLE KAZANDIRIR"]));
+      qc.appendChild(el("div", { class: "q-prompt", style: "margin-bottom:16px;" }, [q.term]));
+      var opts = el("div", { class: "q-options" });
+      q.options.forEach(function (opt) {
+        var cls = "q-option";
+        if (q.answered) { if (opt === q.correct) cls += " correct"; else if (opt === q.answered) cls += " wrong"; }
+        opts.appendChild(el("button", { class: cls, disabled: q.answered ? "disabled" : null, onclick: () => answerCharmsQuestion(opt) }, [opt]));
+      });
+      qc.appendChild(opts);
+      wrap.appendChild(qc);
+      return wrap;
+    }
+
+    var grid = el("div", { class: "charms-grid" });
+    state.charmsGrid.forEach(function (type, idx) {
+      var isQ = type === CHARM_QUESTION;
+      var cls = "charm-tile " + (isQ ? "charm-cq" : "charm-c" + type) + (state.charmsSelected === idx ? " selected" : "");
+      grid.appendChild(el("button", { class: cls, onclick: () => onCharmClick(idx) }, [isQ ? "❓" : CHARM_ICON[type]]));
+    });
+    wrap.appendChild(grid);
+    wrap.appendChild(el("div", { class: "cl-key-hint", style: "text-align:center; max-width:480px; margin:12px auto 0;" }, ["3 ya da daha fazla aynı charm'ı yan yana getirmek için komşu iki taşı seç. ❓ charm'ını eşleştirince setinden bir soru çıkar, doğru cevap +3 hamle kazandırır."]));
+    return wrap;
+  }
+
+  // ---------------- Mod: Hız Turu (Doğru mu Yanlış mı) ----------------
+  function startTrueFalse(s) {
+    var v = validCards(s);
+    if (v.length < 4) { alert("Bu oyun için en az 4 dolu kart gerekir."); return; }
+    var count = Math.min(20, Math.max(10, v.length));
+    var pool = shuffle(v);
+    var qs = [];
+    for (var i = 0; i < count; i++) {
+      var c = pool[i % pool.length];
+      var isTrue = Math.random() < 0.5;
+      var shownDef = c.def;
+      if (!isTrue) {
+        var others = v.filter(x => x.id !== c.id);
+        if (others.length) { shownDef = shuffle(others)[0].def; } else { isTrue = true; }
+      }
+      qs.push({ cardId: c.id, term: c.term, shownDef: shownDef, isTrue: isTrue, answered: null });
+    }
+    state.tfQuestions = qs;
+    state.tfIndex = 0;
+    state.tfCorrect = 0;
+    state.tfStreak = 0;
+    state.tfStartedAt = nowMs();
+    state.tfLogged = false;
+    state.mode = "truefalse";
+    render();
+  }
+
+  function answerTrueFalse(userSaysTrue) {
+    var q = state.tfQuestions[state.tfIndex];
+    if (!q || q.answered != null) return;
+    q.answered = userSaysTrue;
+    var correct = userSaysTrue === q.isTrue;
+    var s = getActiveSet();
+    var card = s && s.cards.find(c => c.id === q.cardId);
+    if (correct) {
+      state.tfCorrect++; state.tfStreak++;
+      playCorrectChime();
+      playComboAnim(state.tfStreak);
+      if (card) updateMastery(s.id, card.id, true);
+    } else {
+      state.tfStreak = 0;
+      if (card) updateMastery(s.id, card.id, false);
+    }
+    render();
+    setTimeout(function () {
+      if (state.mode === "truefalse") { state.tfIndex++; render(); }
+    }, 900);
+  }
+
+  function renderTrueFalse(s) {
+    var wrap = el("div", { class: "quiz-wrap" });
+    if (state.tfIndex >= state.tfQuestions.length) {
+      var total = state.tfQuestions.length, score = state.tfCorrect;
+      if (!state.tfLogged) { logActivity(s.id, "truefalse", total, score, nowMs() - state.tfStartedAt, {}); state.tfLogged = true; }
+      wrap.appendChild(el("div", { class: "quiz-summary" }, [
+        el("h2", { style: "font-size:32px;margin-bottom:12px;" }, ["Hız Turu Bitti ⚡"]),
+        el("div", { class: "score-big" }, [score + " / " + total]),
+        el("p", { class: "score-sub" }, ["Başarı: %" + (total ? Math.round(score / total * 100) : 0)]),
+        el("div", { class: "cl-result-actions" }, [
+          el("button", { class: "primary-btn", style: "border-radius:40px;padding:14px 24px;", onclick: () => startTrueFalse(s) }, ["Tekrar Oyna"]),
+          el("button", { class: "cl-icon-btn", onclick: () => { state.mode = "overview"; render(); } }, ["Sete dön"])
+        ])
+      ]));
+      return wrap;
+    }
+    wrap.appendChild(el("div", { class: "quiz-combo-indicator" }, ["COMBO: 🔥 " + state.tfStreak]));
+    var bars = el("div", { class: "q-top-bars" });
+    state.tfQuestions.forEach(function (item, idx) {
+      var cls = "q-bar-segment" + (idx === state.tfIndex ? " active" : "");
+      if (idx !== state.tfIndex && item.answered != null) cls += (item.answered === item.isTrue) ? " correct" : " wrong";
+      bars.appendChild(el("div", { class: cls }));
+    });
+    wrap.appendChild(bars);
+
+    var q = state.tfQuestions[state.tfIndex];
+    var card = s.cards.find(c => c.id === q.cardId);
+    var qc = el("div", { class: "q-card", style: "text-align:center;" });
+    qc.appendChild(el("button", { class: "speak-btn", style: "position:absolute; top:16px; right:16px;", onclick: e => { e.stopPropagation(); speakText(q.term); } }, ["🔊"]));
+    if (card && card.image) qc.appendChild(el("img", { src: card.image, class: "qcard-image" }));
+    qc.appendChild(el("div", { class: "q-eyebrow" }, ["TERİM"]));
+    qc.appendChild(el("div", { class: "q-prompt", style: "margin-bottom:6px;" }, [q.term]));
+    qc.appendChild(el("div", { class: "q-eyebrow", style: "margin-top:14px;" }, ["BU TANIM DOĞRU MU?"]));
+    qc.appendChild(el("div", { style: "font-size:18px; font-weight:600; margin:8px 0 18px; color:var(--text-dark);" }, [q.shownDef]));
+
+    if (q.answered == null) {
+      var btnRow = el("div", { style: "display:flex; gap:14px;" });
+      btnRow.appendChild(el("button", { class: "primary-btn", style: "flex:1; background:var(--success); box-shadow:none;", onclick: () => answerTrueFalse(true) }, ["✅ Doğru"]));
+      btnRow.appendChild(el("button", { class: "primary-btn", style: "flex:1; background:var(--danger); box-shadow:none;", onclick: () => answerTrueFalse(false) }, ["❌ Yanlış"]));
+      qc.appendChild(btnRow);
+    } else {
+      var isCorrect = q.answered === q.isTrue;
+      qc.appendChild(el("div", { class: isCorrect ? "cl-ok" : "cl-bad", style: "font-size:16px; font-weight:800;" }, [isCorrect ? "✓ Doğru bildin!" : "✕ Yanlış bildin."]));
+      if (!q.isTrue && card) qc.appendChild(el("div", { style: "color:var(--text-muted); margin-top:8px;" }, ["Gerçek tanım: " + card.def]));
+    }
+    wrap.appendChild(qc);
+    return wrap;
+  }
+
+
+  /* ---------- Cardly 2.0 logic ---------- */
+  var ACTIVITY_KEY = "cardly_activity_v2";
+  var activityLog = (function(){
+    try { return JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]") || []; } catch(e) { return []; }
+  })();
+
+  function writeActivity() {
+    try { localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activityLog.slice(-200))); } catch(e) {}
+  }
+  function nowMs(){ return Date.now(); }
+  function todayKey(ts){ var d=new Date(ts||nowMs()); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function dayStart(ts){ var d=new Date(ts||nowMs()); d.setHours(0,0,0,0); return d.getTime(); }
+  function dateLabel(ts){
+    if(!ts) return "Belirsiz";
+    var d=new Date(ts);
+    if(todayKey(ts)===todayKey()) return "Bugün";
+    var tomorrow=dayStart()+86400000;
+    if(ts>=tomorrow && ts<tomorrow+86400000) return "Yarın";
+    return d.toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit"});
+  }
+  function cardNormalize(c){
+    c.mastery = Number.isFinite(+c.mastery) ? +c.mastery : 0;
+    if(c.dueAt == null) c.dueAt = null;
+    if(c.intervalDays == null) c.intervalDays = 0;
+    if(c.reps == null) c.reps = 0;
+    if(c.lapses == null) c.lapses = 0;
+    if(c.image === undefined) c.image = null;
+    if(c.lastReviewedAt === undefined) c.lastReviewedAt = null;
+    return c;
+  }
+  state.sets.forEach(function(s){
+    s.tags = Array.isArray(s.tags) ? s.tags : [];
+    s.cards = Array.isArray(s.cards) ? s.cards : [];
+    s.cards.forEach(cardNormalize);
+    s.bestMatchTime = s.bestMatchTime || null;
+    s.bestCharmsScore = s.bestCharmsScore || null;
+  });
+  persist();
+
+  function validCards(s){ return s ? s.cards.filter(c=>c.term && c.term.trim() && c.def && c.def.trim()) : []; }
+  function dueCards(s){
+    var all=validCards(s), t=nowMs();
+    return all.filter(c => c.dueAt == null || c.dueAt <= t);
+  }
+  function wrongCards(s){ return validCards(s).filter(c => (c.lapses||0)>0); }
+  function masteredCards(s){ return validCards(s).filter(c => c.mastery>=3); }
+  function nextDueText(c){ return c.dueAt ? dateLabel(c.dueAt) : "Yeni kart"; }
+
+  // ---------------- Bilgi Boşluğu Haritası: risk skorlama ----------------
+  var RISK_TIER_META = {
+    kritik:     { label: "Kritik",     color: "var(--danger)",  bg: "var(--danger-light)" },
+    zayif:      { label: "Zayıf",      color: "#E65100",        bg: "var(--warning-light)" },
+    sallantida: { label: "Sallantıda", color: "#9C7A00",        bg: "var(--warning-light)" },
+    guclu:      { label: "Güçlü",      color: "var(--success)", bg: "var(--success-light)" },
+    yeni:       { label: "Yeni",       color: "var(--text-muted)", bg: "var(--bg-hover)" }
+  };
+
+  // Kartın "unutulma riski" skoru: geçmiş hatalar, mastery seviyesi ve gecikmiş tekrar süresinden hesaplanır.
+  // Hiçbir AI/servis gerekmiyor - tamamen localStorage'daki lapses/mastery/dueAt verisinden türetiliyor.
+  function cardRiskScore(c){
+    if(!c.reps && !c.lapses) return -1; // hiç çalışılmamış -> "Yeni" sayılır, risk hesaplanmaz
+    var score = 0;
+    score += (c.lapses||0) * 3;
+    score += Math.max(0, 3 - (c.mastery||0)) * 1.3;
+    if(c.dueAt){
+      var overdueDays = (nowMs() - c.dueAt) / 86400000;
+      if(overdueDays > 0) score += Math.min(overdueDays, 10);
+    }
+    return +score.toFixed(1);
+  }
+
+  function cardRiskTier(c){
+    if(!c.term || !c.term.trim() || !c.def || !c.def.trim()) return null;
+    var score = cardRiskScore(c);
+    if(score < 0) return "yeni";
+    if(score >= 7) return "kritik";
+    if(score >= 3.5) return "zayif";
+    if(score >= 1) return "sallantida";
+    return "guclu";
+  }
+
+  function setRiskBreakdown(s){
+    var counts = { kritik:0, zayif:0, sallantida:0, guclu:0, yeni:0 };
+    validCards(s).forEach(function(c){
+      var t = cardRiskTier(c);
+      if(t) counts[t]++;
+    });
+    return counts;
+  }
+
+  function topRiskyCards(limit){
+    var all = [];
+    state.sets.forEach(function(s){
+      validCards(s).forEach(function(c){
+        var score = cardRiskScore(c);
+        if(score > 0){ all.push({ set:s, card:c, score:score, tier:cardRiskTier(c) }); }
+      });
+    });
+    all.sort(function(a,b){ return b.score - a.score; });
+    return all.slice(0, limit || 12);
+  }
+
+  function scheduleCard(card, rating){
+    var now=nowMs();
+    var minutes = 0, days = 0;
+    var old = Number(card.intervalDays||0);
+    card.reps = Number(card.reps||0);
+    card.lapses = Number(card.lapses||0);
+    card.lastReviewedAt = now;
+    if(rating==="tekrar"){
+      card.mastery=0; card.lapses++; card.reps=0; card.intervalDays=0; minutes=5;
+    } else if(rating==="zor"){
+      card.mastery=Math.max(1, Math.min(3, card.mastery||0)); card.reps++;
+      days = old>0 ? Math.max(1, Math.min(3, old*0.75)) : 1;
+      card.intervalDays=days;
+    } else if(rating==="orta"){
+      card.mastery=Math.max(2, Math.min(3, card.mastery||0)); card.reps++;
+      days = old>0 ? Math.max(2, Math.round(old*2)) : 3;
+      card.intervalDays=days;
+    } else {
+      card.mastery=3; card.reps++;
+      days = old>0 ? Math.max(4, Math.round(old*2.5)) : 4;
+      card.intervalDays=days;
+    }
+    card.dueAt = minutes ? now+minutes*60000 : now+days*86400000;
+  }
+
+
+  function logActivity(setId, mode, total, correct, durationMs, meta){
+    if(!total) return;
+    activityLog.push({date:nowMs(),day:todayKey(),setId:setId||null,mode:mode||"study",total:total,correct:correct,durationMs:durationMs||0,meta:meta||{}});
+    writeActivity();
+  }
+
+  function dailyStats(){
+    var key=todayKey();
+    var rows=activityLog.filter(x=>x.day===key);
+    return {
+      sessions:rows.length,
+      cards:rows.reduce((a,x)=>a+x.total,0),
+      correct:rows.reduce((a,x)=>a+(x.correct||0),0),
+      ms:rows.reduce((a,x)=>a+(x.durationMs||0),0)
+    };
+  }
+  function globalStats(){
+    var cards=state.sets.reduce((a,s)=>a+validCards(s).length,0);
+    var due=state.sets.reduce((a,s)=>a+dueCards(s).length,0);
+    var mastered=state.sets.reduce((a,s)=>a+masteredCards(s).length,0);
+    var totalQ=activityLog.reduce((a,x)=>a+x.total,0);
+    var totalC=activityLog.reduce((a,x)=>a+(x.correct||0),0);
+    var ms=activityLog.reduce((a,x)=>a+(x.durationMs||0),0);
+    return {cards:cards,due:due,mastered:mastered,totalQ:totalQ,totalC:totalC,ms:ms,accuracy:totalQ?Math.round(totalC/totalQ*100):0};
+  }
+  function formatDuration(ms){
+    var mins=Math.round((ms||0)/60000);
+    if(mins<1 && ms>0) return "<1 dk";
+    return Math.floor(mins/60) + "s " + (mins%60) + "dk";
+  }
+
+  state.mode = state.mode || "overview";
+  state.studySource = state.studySource || "due";
+  state.studyStartedAt = 0;
+  state.studyLogged = false;
+  state.quizLogged = false;
+  state.studyOriginalTotal = 0;
+  state.studyAnswered = 0;
+  state.studyCorrect = 0;
+  state.overviewQuery = state.overviewQuery || "";
+  state.overviewFilter = state.overviewFilter || "all";
+  state.tfQuestions = [];
+  state.tfIndex = 0;
+  state.tfCorrect = 0;
+  state.tfStreak = 0;
+  state.tfStartedAt = 0;
+  state.tfLogged = false;
+  state.charmsGrid = [];
+  state.charmsSelected = null;
+  state.charmsScore = 0;
+  state.charmsMoves = 0;
+  state.charmsPendingQuestion = null;
+  state.charmsStartedAt = 0;
+  state.charmsLogged = false;
+
+  function startStudy(s, opts){
+    opts = opts || {};
+    var pool = opts.cards || (opts.source==="wrong" ? wrongCards(s) : opts.source==="all" ? validCards(s) : dueCards(s));
+    if(!pool.length) pool = validCards(s);
+    state.studySource = opts.source || (opts.cards ? "custom" : "due");
+    state.studyQueue = shuffle(pool);
+    state.studyTotalCount = state.studyQueue.length;
+    state.studyOriginalTotal = state.studyQueue.length;
+    state.studyAnswered = 0;
+    state.studyCorrect = 0;
+    state.studyFlipped = false;
+    state.studyAnimating = false;
+    state.studyStartedAt = nowMs();
+    state.studyLogged = false;
+    state.mode = "study";
+    render();
+  }
+
+  function handleStudyRating(ratingType, card){
+    if(state.studyAnimating) return;
+    state.studyAnimating=true;
+    var wrapper=document.getElementById("active-flashcard-wrapper");
+    if(wrapper) wrapper.classList.add((ratingType==="kolay"||ratingType==="orta")?"anim-slide-out-right":"anim-slide-out-left");
+    setTimeout(function(){
+      state.studyQueue.shift();
+      var s=getActiveSet();
+      var orig=s && s.cards.find(c=>c.id===card.id);
+      if(orig){
+        scheduleCard(orig,ratingType);
+        if(ratingType!=="tekrar") state.studyCorrect++;
+        if(ratingType==="tekrar") state.studyCorrect=Math.max(0,state.studyCorrect);
+        state.studyAnswered++;
+      }
+      if(ratingType==="tekrar"){
+        state.studyQueue.splice(Math.min(2,state.studyQueue.length),0,card);
+      } else if(ratingType==="zor" || ratingType==="orta"){
+        if(state.studyQueue.length<Math.max(1,Math.min(3,state.studyOriginalTotal))) state.studyQueue.push(card);
+      }
+      persist();
+      state.studyFlipped=false;
+      state.studyAnimating=false;
+      render();
+    },220);
+  };
+
+  function renderStudy(s){
+    var wrap=el("div",{class:"study-wrap"});
+    var due=dueCards(s).length;
+    var stats=getMasteryStats(s);
+    var pm=stats.total?(stats.mastered/stats.total*100):0, pl=stats.total?(stats.learning/stats.total*100):0;
+    wrap.appendChild(el("div",{class:"s-progress-bar"},[
+      el("div",{class:"s-prog-green",style:"width:"+pm+"%"}),el("div",{class:"s-prog-orange",style:"width:"+pl+"%"})
+    ]));
+    wrap.appendChild(el("div",{class:"s-prog-text"},[
+      state.studyQueue.length+" kart kaldı · "+(state.studySource==="wrong"?"Yanlışlar modu":state.studySource==="all"?"Tüm set":"Bugünkü tekrarlar")
+    ]));
+    if(state.studyQueue.length===0){
+      var took=nowMs()-(state.studyStartedAt||nowMs()), total=state.studyAnswered||state.studyOriginalTotal||0;
+      if(!state.studyLogged){ logActivity(s.id,"study",total,state.studyCorrect||0,took,{source:state.studySource}); state.studyLogged=true; persist(); }
+      var dc=dueCards(s).length, wc=wrongCards(s).length;
+      wrap.appendChild(el("div",{class:"study-done anim-slide-in"},[
+        el("div",{class:"big"},["Çalışma tamamlandı 🎉"]),
+        el("div",{class:"cl-stat-grid",style:"margin:24px 0; grid-template-columns:repeat(3,1fr);"},[
+          el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(state.studyOriginalTotal)]),el("div",{class:"l"},["Kart"])]),
+          el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(state.studyCorrect)]),el("div",{class:"l"},["Hatırlanan"])]),
+          el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(dueCards(s).length)]),el("div",{class:"l"},["Bugün kalan"])]),
+        ]),
+        el("p",{style:"color:var(--text-muted);"},["Tekrar tarihleri kartlara kaydedildi. Bir sonraki tekrar geldiğinde Cardly seni yeniden karşılayacak."]),
+        el("div",{class:"cl-result-actions"},[
+          dueCards(s).length ? el("button",{class:"primary-btn",style:"border-radius:40px;",onclick:()=>startStudy(s,{source:"due"})},["Kalan tekrarları çalış"]) : null,
+          wrongCards(s).length ? el("button",{class:"cl-icon-btn",onclick:()=>startStudy(s,{source:"wrong"})},["🔴 Yanlışları çalış"]) : null,
+          el("button",{class:"cl-icon-btn",onclick:()=>{state.mode="overview";render();}},["Sete dön"])
+        ])
+      ]));
+      return wrap;
+    }
+    var card=state.studyQueue[0];
+    var badgeTxt=card.mastery>=3?"USTA":card.mastery>0?"ÖĞRENİLİYOR":"YENİ";
+
+    wrap.appendChild(el("div",{class:"cl-session-note"},["Sonraki tekrar: "+nextDueText(card)]));
+
+    var faceText = state.studyFlipped ? card.def : card.term;
+    wrap.appendChild(el("div",{id:"active-flashcard-wrapper",class:"flashcard-wrapper anim-slide-in"},[
+      el("div",{class:"flashcard",onclick:()=>{state.studyFlipped=!state.studyFlipped;render();}},[
+        el("div",{class:"card-inner-badge"},[badgeTxt]),
+        el("button",{class:"speak-btn", style:"position:absolute; top:16px; right:16px;", onclick:e=>{e.stopPropagation(); speakText(faceText);}},["🔊"]),
+        card.image ? el("img",{src:card.image, class:"qcard-image"}) : null,
+        el("div",{class:"face-text"},[faceText]),
+        !state.studyFlipped ? el("div",{class:"cl-key-hint"},["Space: çevir · 1 Tekrar · 2 Zor · 3 Orta · 4 Kolay"]) : null
+      ])
+    ]));
+    var controls=el("div",{class:"study-controls"});
+    if(!state.studyFlipped){
+      controls.appendChild(el("button",{class:"flip-btn-pill",onclick:()=>{state.studyFlipped=true;render();}},["Çevir"]));
+    } else {
+      var rg=el("div",{class:"rating-group anim-slide-in"});
+      [["tekrar","Tekrar Göster","5 dk"],["zor","Zor","1 gün"],["orta","Orta",String(Math.max(3,Math.round((card.intervalDays||1)*2)))+" gün"],["kolay","Kolay",String(Math.max(4,Math.round((card.intervalDays||1)*2.5)))+" gün"]].forEach(function(r,i){
+        rg.appendChild(el("button",{class:"rating-btn r-"+(i+1),onclick:()=>handleStudyRating(r[0],card)},[el("div",{class:"r-title"},[r[1]]),el("div",{class:"r-sub"},[r[2]])]));
+      });
+      controls.appendChild(rg);
+    }
+    wrap.appendChild(controls);
+    return wrap;
+  }
+
+  function setActionButton(text, fn, cls){
+    return el("button",{class:cls||"cl-icon-btn",onclick:fn},[text]);
+  }
+
+  function renderDashboard(){
+    var gs=globalStats(), ds=dailyStats(), dueAll=[];
+    state.sets.forEach(function(s){ dueCards(s).forEach(function(c){ dueAll.push({set:s,card:c}); }); });
+    dueAll=dueAll.slice(0,10);
+    var wrap=el("div",{class:"cl-dashboard"});
+    wrap.appendChild(el("div",{class:"cl-hero"},[
+      el("h2",{},["Bugünkü çalışma merkezine hoş geldin 👋"]),
+      el("p",{},[ds.cards ? "Bugün "+ds.cards+" kartla çalıştın. Küçük tekrarlar büyük fark yaratıyor." : "Bugün henüz bir tekrar yapmadın. Önce birkaç kartla başlamak yeterli."]),
+      state.sets.length ? el("button",{class:"primary-btn cl-daily-btn",style:"background:#fff;color:var(--primary);box-shadow:none;",onclick:()=>startStudy(getActiveSet()||state.sets[0],{source:"due"})},[gs.due+" bekleyen tekrar · Çalışmaya başla"]) : null
+    ]));
+    wrap.appendChild(el("div",{class:"cl-stat-grid"},[
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(gs.due)]),el("div",{class:"l"},["Bekleyen tekrar"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(gs.mastered)]),el("div",{class:"l"},["Usta kart"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},["%"+gs.accuracy]),el("div",{class:"l"},["Genel doğruluk"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},[formatDuration(gs.ms)]),el("div",{class:"l"},["Toplam çalışma"])]),
+    ]));
+    var p1=el("div",{class:"cl-panel"});
+    p1.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["🎯 Bugün tekrar et"])]));
+    if(!dueAll.length) p1.appendChild(el("div",{class:"cl-empty"},["Bugün için bekleyen kart görünmüyor. Bir set seçip yeni kartları öğrenmeye başlayabilirsin."]));
+    dueAll.forEach(function(x){
+      p1.appendChild(el("div",{class:"cl-due-card"},[
+        el("div",{},[el("div",{class:"term"},[x.card.term]),el("div",{class:"def"},[(x.set.title||"Set")+" · "+nextDueText(x.card)])]),
+        el("button",{class:"cl-icon-btn",onclick:()=>startStudy(x.set,{cards:[x.card],source:"custom"})},["Çalış"])
+      ]));
+    });
+    if(dueAll.length) p1.appendChild(el("button",{class:"primary-btn",style:"width:100%;margin-top:8px;",onclick:()=>{var first=state.sets.find(s=>dueCards(s).length); if(first) startStudy(first,{source:"due"});}},["Tüm bekleyenleri çalış"]));
+    wrap.appendChild(p1);
+
+    var p2=el("div",{class:"cl-grid-2"});
+    var recent=activityLog.slice(-8).reverse();
+    var rp=el("div",{class:"cl-panel"});
+    rp.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["📈 Son çalışmalar"])]));
+    if(!recent.length) rp.appendChild(el("div",{class:"cl-empty"},["Henüz çalışma geçmişi yok."]));
+    recent.forEach(function(a){
+      var ss=state.sets.find(s=>s.id===a.setId);
+      rp.appendChild(el("div",{class:"cl-due-card"},[
+        el("div",{},[el("div",{class:"term"},[(ss?ss.title:"Genel")+" · "+a.mode]),el("div",{class:"def"},[a.total+" kart · "+(a.correct||0)+" doğru · "+formatDuration(a.durationMs)])]),
+        el("span",{class:"cl-chip"},[new Date(a.date).toLocaleDateString("tr-TR")])
+      ]));
+    });
+    p2.appendChild(rp);
+    var sp=el("div",{class:"cl-panel"});
+    sp.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["📚 Setler"])]));
+    state.sets.slice(0,8).forEach(function(s){
+      var vc=validCards(s).length, mc=masteredCards(s).length, pc=vc?Math.round(mc/vc*100):0;
+      sp.appendChild(el("div",{class:"cl-set-card"},[
+        el("div",{},[el("div",{class:"title"},[s.title||"İsimsiz set"]),el("div",{class:"meta"},[vc+" kart · "+dueCards(s).length+" tekrar bekliyor"])]),
+        el("button",{class:"cl-icon-btn",onclick:()=>{state.activeSetId=s.id;state.mode="overview";render();}},["Aç"])
+      ]));
+      var bar=el("div",{class:"cl-progress"}); bar.appendChild(el("div",{style:"width:"+pc+"%"})); sp.appendChild(bar);
+    });
+    p2.appendChild(sp);
+    wrap.appendChild(p2);
+    return wrap;
+  }
+
+  function renderStatsPage(){
+    var gs=globalStats(), wrap=el("div",{class:"cl-dashboard"});
+    wrap.appendChild(el("div",{class:"cl-panel"},[
+      el("div",{class:"cl-panel-head"},[el("h2",{},["📊 Çalışma İstatistikleri"]),el("span",{class:"cl-chip"},[activityLog.length+" oturum"]) ]),
+      el("div",{class:"cl-stat-grid"},[
+        el("div",{class:"cl-stat"},[el("div",{class:"v"},[gs.totalQ]),el("div",{class:"l"},["Çözülen kart"])]),
+        el("div",{class:"cl-stat"},[el("div",{class:"v"},["%"+gs.accuracy]),el("div",{class:"l"},["Doğruluk"])]),
+        el("div",{class:"cl-stat"},[el("div",{class:"v"},[gs.mastered]),el("div",{class:"l"},["Usta kart"])]),
+        el("div",{class:"cl-stat"},[el("div",{class:"v"},[formatDuration(gs.ms)]),el("div",{class:"l"},["Çalışma süresi"])]),
+      ])
+    ]));
+    var p=el("div",{class:"cl-panel"}); p.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["Set bazında ilerleme"])]));
+    state.sets.forEach(function(s){
+      var vc=validCards(s).length, mc=masteredCards(s).length, dc=dueCards(s).length, pct=vc?Math.round(mc/vc*100):0;
+      var acts=activityLog.filter(a=>a.setId===s.id), qs=acts.reduce((a,x)=>a+x.total,0), co=acts.reduce((a,x)=>a+(x.correct||0),0);
+      p.appendChild(el("div",{style:"margin-bottom:18px;"},[
+        el("div",{class:"cl-metric-row"},[el("strong",{},[s.title||"İsimsiz"]),el("span",{class:"cl-chip"},[pct+"% usta · "+dc+" bekleyen"])]),
+        el("div",{class:"cl-progress"},[el("div",{style:"width:"+pct+"%"})]),
+        el("div",{class:"cl-session-note"},[qs+" kart · "+(qs?Math.round(co/qs*100):0)+"% doğruluk"])
+      ]));
+    });
+    wrap.appendChild(p);
+    var days={};
+    activityLog.forEach(function(a){ days[a.day]=(days[a.day]||0)+a.total; });
+    var p2=el("div",{class:"cl-panel"}); p2.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["Son 7 gün"])]));
+    for(var i=6;i>=0;i--){
+      var d=new Date(); d.setDate(d.getDate()-i);
+      var k=todayKey(d.getTime()), count=days[k]||0, label=d.toLocaleDateString("tr-TR",{weekday:"short",day:"numeric"});
+      p2.appendChild(el("div",{class:"cl-metric-row",style:"margin:10px 0;"},[el("span",{style:"width:80px;"},[label]),el("div",{class:"cl-bar"},[el("span",{style:"width:"+Math.min(100,count*5)+"%"})]),el("strong",{},[String(count)])]));
+    }
+    wrap.appendChild(p2);
+    return wrap;
+  }
+
+  // ---------------- UI: Bilgi Boşluğu Haritası ----------------
+  function renderWeakMap(){
+    var wrap = el("div",{class:"cl-dashboard"});
+    wrap.appendChild(el("div",{class:"cl-hero"},[
+      el("h2",{},["Bilgi Boşluğu Haritası 🧠"]),
+      el("p",{},["Cardly, hangi kartlarda zorlandığını hatalarından ve tekrar geçmişinden takip ediyor. İşte en çok dikkat etmen gereken yerler."])
+    ]));
+
+    var totalCounts = { kritik:0, zayif:0, sallantida:0, guclu:0, yeni:0 };
+    state.sets.forEach(function(s){
+      var c = setRiskBreakdown(s);
+      Object.keys(c).forEach(function(k){ totalCounts[k]+=c[k]; });
+    });
+    wrap.appendChild(el("div",{class:"cl-stat-grid"},[
+      el("div",{class:"cl-stat"},[el("div",{class:"v",style:"color:"+RISK_TIER_META.kritik.color+";"},[String(totalCounts.kritik)]),el("div",{class:"l"},["Kritik"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v",style:"color:"+RISK_TIER_META.zayif.color+";"},[String(totalCounts.zayif)]),el("div",{class:"l"},["Zayıf"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v",style:"color:"+RISK_TIER_META.sallantida.color+";"},[String(totalCounts.sallantida)]),el("div",{class:"l"},["Sallantıda"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v",style:"color:"+RISK_TIER_META.guclu.color+";"},[String(totalCounts.guclu)]),el("div",{class:"l"},["Güçlü"])]),
+    ]));
+
+    var risky = topRiskyCards(12);
+    var p1 = el("div",{class:"cl-panel"});
+    p1.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["🎯 Bugün en çok dikkat etmen gerekenler"])]));
+    if(!risky.length){
+      p1.appendChild(el("div",{class:"cl-empty"},["Henüz risk taşıyan kart yok — ya hiç çalışmaya başlamadın ya da gerçekten iyi gidiyorsun. 👏"]));
+    }
+    risky.forEach(function(item){
+      var meta = RISK_TIER_META[item.tier];
+      p1.appendChild(el("div",{class:"cl-due-card"},[
+        el("div",{},[
+          el("div",{class:"term"},[item.card.term]),
+          el("div",{class:"def"},[(item.set.title||"Set") + " · " + (item.card.lapses||0) + " hata"])
+        ]),
+        el("div",{style:"display:flex; align-items:center; gap:10px;"},[
+          el("span",{class:"cl-chip", style:"background:"+meta.bg+"; color:"+meta.color+";"},[meta.label]),
+          el("button",{class:"cl-icon-btn", onclick:()=>{state.activeSetId=item.set.id; startStudy(item.set,{cards:[item.card], source:"custom"});}},["Çalış"])
+        ])
+      ]));
+    });
+    wrap.appendChild(p1);
+
+    var p2b = el("div",{class:"cl-panel"});
+    p2b.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["📚 Set bazında dağılım"])]));
+    if(!state.sets.length) p2b.appendChild(el("div",{class:"cl-empty"},["Henüz set yok."]));
+    state.sets.forEach(function(s){
+      var counts = setRiskBreakdown(s);
+      var total = counts.kritik+counts.zayif+counts.sallantida+counts.guclu+counts.yeni;
+      if(!total) return;
+      var segWrap = el("div",{class:"mastery-track", style:"margin:10px 0;"});
+      [["kritik",RISK_TIER_META.kritik.color],["zayif",RISK_TIER_META.zayif.color],["sallantida",RISK_TIER_META.sallantida.color],["guclu",RISK_TIER_META.guclu.color],["yeni","var(--border-dark)"]].forEach(function(pair){
+        var pct = total ? (counts[pair[0]]/total*100) : 0;
+        if(pct>0) segWrap.appendChild(el("div",{style:"height:100%; width:"+pct+"%; background:"+pair[1]+";"}));
+      });
+      var riskyOfSet = validCards(s).filter(function(c){ var t=cardRiskTier(c); return t==="kritik"||t==="zayif"; });
+      p2b.appendChild(el("div",{style:"margin-bottom:18px;"},[
+        el("div",{class:"cl-metric-row"},[
+          el("strong",{},[s.title||"İsimsiz"]),
+          el("span",{class:"cl-chip"},[counts.kritik+" kritik · "+counts.zayif+" zayıf"])
+        ]),
+        segWrap,
+        riskyOfSet.length
+          ? el("button",{class:"cl-icon-btn", style:"margin-top:8px;", onclick:()=>{state.activeSetId=s.id; startStudy(s,{cards:riskyOfSet, source:"custom"});}},["🎯 Bu setin zayıf kartlarını çalış ("+riskyOfSet.length+")"])
+          : el("div",{class:"cl-session-note"},["Bu sette şu an risk taşıyan kart yok."])
+      ]));
+    });
+    wrap.appendChild(p2b);
+
+    return wrap;
+  }
+
+  function renderSidebar(){
+    var children=[
+      el("div",{class:"brand"},[el("div",{class:"mark"},["C+"]),el("h1",{},["Cardly"])]),
+      el("button",{class:"new-set-btn",onclick:createNewSet},["+ Yeni Set Oluştur"]),
+      el("button",{class:"cl-icon-btn",style:"width:100%;margin:10px 0;",onclick:()=>{state.mode="dashboard";render();}},["🏠 Bugün"]),
+      el("button",{class:"cl-icon-btn",style:"width:100%;margin-bottom:10px;",onclick:()=>{state.mode="weakmap";render();}},["🧠 Zayıf Noktalar"]),
+      el("button",{class:"cl-icon-btn",style:"width:100%;margin-bottom:14px;",onclick:()=>{state.mode="stats";render();}},["📊 İstatistikler"])
+    ];
+    var folders={};
+    state.sets.forEach(function(s){var f=s.folder||"Klasörsüz";(folders[f]||(folders[f]=[])).push(s);});
+    Object.keys(folders).sort((a,b)=>a.localeCompare(b,"tr",{numeric:true})).forEach(function(f){
+      var list=el("ul",{class:"set-list"});
+      folders[f].sort((a,b)=>(a.title||"").localeCompare(b.title||"","tr",{numeric:true})).forEach(function(s){
+        list.appendChild(el("li",{},[el("button",{class:"set-list-item"+(s.id===state.activeSetId?" active":""),onclick:()=>{state.activeSetId=s.id;state.mode="overview";render();}},[
+          el("span",{class:"name"},[s.title||"İsimsiz set"]),el("span",{class:"count"},[validCards(s).length+" Kart"])
+        ])]));
+      });
+      children.push(el("div",{class:"folder-group"},[el("div",{class:"folder-header"},["📁 "+f]),list]));
+    });
+    return el("div",{class:"sidebar"},children);
+  }
+
+  function renderOverview(s){
+    var wrap=el("div",{class:"cl-dashboard"});
+    var vc=validCards(s), gs=getMasteryStats(s), due=dueCards(s);
+    var pct=gs.total?Math.round(gs.mastered/gs.total*100):0;
+    var banner=el("div",{class:"set-banner",style:s.coverImage?"background-image:url('"+s.coverImage+"');":"background:linear-gradient(135deg,var(--primary),#8224E3);"},[
+      el("div",{class:"banner-overlay"}),
+      el("div",{class:"banner-actions"},[
+        el("button",{class:"banner-btn",onclick:()=>{state.mode="edit";state.bulkImportMode=false;render();}},["✏️ Düzenle"]),
+        el("button",{class:"banner-btn",onclick:()=>startStudy(s,{source:"due"})},["🎯 Bugün Çalış"]),
+        el("button",{class:"banner-btn danger",onclick:()=>{if(!confirm("Set silinsin mi?"))return;state.sets=state.sets.filter(x=>x.id!==s.id);state.activeSetId=state.sets.length?state.sets[0].id:null;state.mode="dashboard";persist();render();}},["🗑️ Sil"])
+      ]),
+      el("div",{class:"banner-content"},[
+        el("h2",{},[s.title||"İsimsiz set"]),
+        s.description?el("p",{},[s.description]):null,
+        el("div",{class:"banner-meta"},[vc.length+" Kart · 📁 "+(s.folder||"Kategorisiz")])
+      ])
+    ]);
+    wrap.appendChild(banner);
+    wrap.appendChild(el("div",{class:"cl-stat-grid",style:"margin-top:18px;"},[
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(due.length)]),el("div",{class:"l"},["Bugün bekleyen"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(gs.mastered)]),el("div",{class:"l"},["Usta"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},["%"+pct]),el("div",{class:"l"},["Set ilerlemesi"])]),
+      el("div",{class:"cl-stat"},[el("div",{class:"v"},[String(wrongCards(s).length)]),el("div",{class:"l"},["Yanlış geçmişi"])]),
+    ]));
+    var ac=el("div",{class:"action-cards"},[
+      el("div",{class:"action-card"+(vc.length<1?" disabled":""),onclick:()=>{if(vc.length)startStudy(s,{source:"due"});}},[el("div",{class:"emoji"},["🃏"]),el("h3",{},["Kartlar"]),el("p",{},[due.length+" tekrar bekliyor"])]),
+      el("div",{class:"action-card"+(vc.length<4?" disabled":""),onclick:()=>{if(vc.length>=4){state.mode="quiz-setup";render();}else alert("En az 4 dolu kart gerekir.");}},[el("div",{class:"emoji"},["📝"]),el("h3",{},["Test Çöz"]),el("p",{},["Çoktan seçmeli pratik"])]),
+      el("div",{class:"action-card"+(vc.length<4?" disabled":""),onclick:()=>{if(vc.length>=4)startMatch(s);else alert("Oyun için en az 4 kart lazım.");}},[el("div",{class:"emoji"},["⏱️"]),el("h3",{},["Eşleştir"]),el("p",{},[s.bestMatchTime?"Rekor: "+s.bestMatchTime:"Zamana karşı yarış"])]),
+      el("div",{class:"action-card"+(!wrongCards(s).length?" disabled":""),onclick:()=>{if(wrongCards(s).length)startStudy(s,{source:"wrong"});}},[el("div",{class:"emoji"},["🔴"]),el("h3",{},["Yanlışlar"]),el("p",{},[wrongCards(s).length+" kartı tekrar et"])]),
+      el("div",{class:"action-card"+(vc.length<4?" disabled":""),onclick:()=>{if(vc.length>=4)startTrueFalse(s);else alert("Bu oyun için en az 4 dolu kart gerekir.");}},[el("div",{class:"emoji"},["⚡"]),el("h3",{},["Hız Turu"]),el("p",{},["Doğru mu yanlış mı? Çabuk karar ver"])]),
+      el("div",{class:"action-card"+(vc.length<4?" disabled":""),onclick:()=>{if(vc.length>=4)startCharms(s);else alert("Bu oyun için en az 4 dolu kart gerekir.");}},[el("div",{class:"emoji"},["💎"]),el("h3",{},["Charms"]),el("p",{},[s.bestCharmsScore?"Rekor: "+s.bestCharmsScore:"Renkleri eşleştir, soruları çöz"])])
+    ]);
+    wrap.appendChild(ac);
+
+    var listPanel=el("div",{class:"cl-panel"});
+    listPanel.appendChild(el("div",{class:"cl-panel-head"},[el("h3",{},["Kartlar ("+vc.length+")"])]));
+    var filter=el("div",{class:"cl-filterbar"});
+    var search=el("input",{class:"cl-search",type:"search",placeholder:"Terim veya tanım ara...",value:state.overviewQuery||"",oninput:e=>{state.overviewQuery=e.target.value;render();}});
+    var sel=el("select",{class:"cl-mini-select",onchange:e=>{state.overviewFilter=e.target.value;render();}},[
+      el("option",{value:"all"},["Tümü"]),el("option",{value:"due"},["Bugün tekrar"]),el("option",{value:"new"},["Yeni"]),el("option",{value:"learning"},["Öğreniliyor"]),el("option",{value:"mastered"},["Usta"]),el("option",{value:"wrong"},["Yanlış geçmişi"])
+    ]);
+    sel.value=state.overviewFilter;
+    filter.appendChild(search);filter.appendChild(sel);
+    listPanel.appendChild(filter);
+    var q=(state.overviewQuery||"").toLocaleLowerCase("tr");
+    var filtered=vc.filter(function(c){
+      var txt=(c.term+" "+c.def).toLocaleLowerCase("tr"), okQ=!q||txt.includes(q);
+      var f=state.overviewFilter;
+      var okF=f==="all"||(f==="due"&&due.includes(c))||(f==="new"&&c.mastery===0)||(f==="learning"&&c.mastery>0&&c.mastery<3)||(f==="mastered"&&c.mastery>=3)||(f==="wrong"&&(c.lapses||0)>0);
+      return okQ&&okF;
+    });
+    if(!filtered.length) listPanel.appendChild(el("div",{class:"cl-empty"},["Bu filtreyle kart bulunamadı."]));
+    filtered.slice(0,250).forEach(function(c){
+      var b=c.mastery>=3?["badge-mastered","Usta"]:c.mastery>0?["badge-learning","Öğreniliyor"]:["badge-new","Yeni"];
+      var leftChildren=[];
+      if(c.image) leftChildren.push(el("img",{src:c.image, class:"term-thumb"}));
+      leftChildren.push(el("span",{},[c.term]));
+      leftChildren.push(el("button",{class:"speak-btn sm", onclick:e=>{e.stopPropagation(); speakText(c.term);}},["🔊"]));
+      listPanel.appendChild(el("div",{class:"term-row"},[
+        el("div",{class:"term-col left", style:"display:flex;align-items:center;gap:10px;"},leftChildren),
+        el("div",{class:"term-col right"},[c.def]),
+        el("div",{class:"term-mastery-badge "+b[0]},[b[1]]) 
+      ]));
+    });
+    if(filtered.length>250) listPanel.appendChild(el("div",{class:"cl-empty"},["İlk 250 kart gösteriliyor. Aramayı daraltabilirsin."]));
+    wrap.appendChild(listPanel);
+    return wrap;
+  }
+
+  function parseBulkLines(text){
+    var rows=[];
+    String(text||"").split(/\r?\n/).forEach(function(line,idx){
+      var l=line.trim(); if(!l) return;
+      var m=l.match(/^\s*(.*?)\s+-\s+(.*)\s*$/);
+      if(m && m[1].trim() && m[2].trim()) rows.push({line:idx+1,term:m[1].trim(),def:m[2].trim(),ok:true});
+      else rows.push({line:idx+1,term:l,def:"",ok:false});
+    });
+    return rows;
+  }
+
+  function renderEdit(s){
+    var wrap=el("div",{class:"set-form"});
+    wrap.appendChild(el("div",{class:"set-header",style:"margin-bottom:24px;"},[el("h2",{},["Seti Düzenle"])]));
+    var topGrid=el("div",{style:"display:grid;grid-template-columns:2fr 1fr;gap:16px;"});
+    topGrid.appendChild(el("div",{},[el("label",{class:"field-label"},["SET ADI"]),el("input",{type:"text",value:s.title,oninput:e=>{s.title=e.target.value;persist();}})]));
+    topGrid.appendChild(el("div",{},[el("label",{class:"field-label"},["KLASÖR"]),el("input",{type:"text",value:s.folder||"",oninput:e=>{s.folder=e.target.value;persist();}})]));
+    wrap.appendChild(topGrid);
+    wrap.appendChild(el("label",{class:"field-label"},["ETİKETLER"]));
+    wrap.appendChild(el("input",{type:"text",placeholder:"KPSS, Tarih, Osmanlı",value:(s.tags||[]).join(", "),oninput:e=>{s.tags=e.target.value.split(",").map(x=>x.trim()).filter(Boolean);persist();}}));
+    wrap.appendChild(el("label",{class:"field-label"},["AÇIKLAMA"]));
+    wrap.appendChild(el("textarea",{oninput:e=>{s.description=e.target.value;persist();}},[s.description||""]));
+
+    wrap.appendChild(el("label",{class:"field-label"},["SET GÖRSELİ (İSTEĞE BAĞLI)"]));
+    wrap.appendChild(buildSetImageRow(s));
+
+    var cardsWrap=el("div",{class:"cards-edit-area"+(state.bulkImportMode?" hidden":"")});
+    s.cards.forEach(function(c,i){
+      var row = el("div",{class:"card-row"},[
+        el("div",{class:"idx"},[String(i+1)]),
+        el("textarea",{placeholder:"Terim",oninput:e=>{c.term=e.target.value;persist();}},[c.term]),
+        el("textarea",{placeholder:"Tanım",oninput:e=>{c.def=e.target.value;persist();}},[c.def]),
+        el("button",{class:"remove-card-btn",onclick:()=>{s.cards.splice(i,1);persist();render();}},["✕"])
+      ]);
+      row.appendChild(buildCardImageRow(c));
+      cardsWrap.appendChild(row);
+    });
+    if(!state.bulkImportMode) cardsWrap.appendChild(el("div",{class:"edit-actions-row"},[
+      el("button",{class:"add-card-btn",onclick:()=>{s.cards.push({id:uid(),term:"",def:"",mastery:0,dueAt:null,intervalDays:0,reps:0,lapses:0,image:null});persist();render();}},["+ Tekil Kart Ekle"]),
+      el("button",{class:"bulk-btn",onclick:()=>{state.bulkImportMode=true;state.bulkText="";render();}},["📄 Toplu Not Ekle"])
+    ]));
+    wrap.appendChild(cardsWrap);
+
+    if(state.bulkImportMode){
+      var bulk=el("div",{class:"bulk-import-area active"});
+      bulk.appendChild(el("p",{style:"color:var(--text-muted);margin-bottom:8px;"},["Ayraç yalnızca \" - \". Tanımın içindeki tireler korunur. Kaydetmeden önce önizlemeyi kontrol et."]));
+      bulk.appendChild(el("textarea",{id:"bulk-text",style:"min-height:240px;font-family:monospace;",placeholder:"Terim 1 - Tanım 1\nTerim 2 - Tanım içinde - tire var\nTerim 3 - Tanım devam ediyor",oninput:e=>{state.bulkText=e.target.value;updateBulkPreview();}},[state.bulkText||""]));
+      var actions=el("div",{style:"display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;"});
+      actions.appendChild(el("button",{class:"icon-btn",onclick:()=>{state.bulkImportMode=false;render();}},["İptal"]));
+      actions.appendChild(el("button",{class:"primary-btn",onclick:()=>{var rows=parseBulkLines(state.bulkText||"");var good=rows.filter(r=>r.ok);good.forEach(r=>s.cards.push({id:uid(),term:r.term,def:r.def,mastery:0,dueAt:null,intervalDays:0,reps:0,lapses:0,image:null}));persist();state.bulkImportMode=false;state.bulkText="";render();}},["✅ Geçerli kartları içeri aktar"]));
+      bulk.appendChild(actions);
+      var prev=el("div",{id:"bulk-preview",class:"cl-import-preview"}); bulk.appendChild(prev);
+      wrap.appendChild(bulk);
+      setTimeout(updateBulkPreview,0);
+    }
+    wrap.appendChild(el("div",{class:"save-row"},[el("button",{class:"icon-btn",onclick:()=>{state.mode="overview";render();}},["← Bitti / Geri Dön"])]));
+    return wrap;
+  }
+
+  function updateBulkPreview(){
+    var box=document.getElementById("bulk-preview"); if(!box) return;
+    var rows=parseBulkLines(state.bulkText||"");
+    var html='<table><thead><tr><th>#</th><th>Terim</th><th>Tanım</th><th>Durum</th></tr></thead><tbody>';
+    rows.forEach(function(r){html+='<tr><td>'+r.line+'</td><td>'+escapeHtml(r.term)+'</td><td>'+escapeHtml(r.def||"")+'</td><td class="'+(r.ok?"cl-ok":"cl-bad")+'">'+(r.ok?"✓ Hazır":"⚠ Ayraç bulunamadı")+'</td></tr>';});
+    html+='</tbody></table>';
+    box.innerHTML=html;
+  }
+  function escapeHtml(s){return String(s||"").replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch];});}
+
+  function renderQuiz(s){
+    var wrap=el("div",{class:"quiz-wrap"});
+    if(state.quizIndex>=state.quizQuestions.length){
+      var score=state.quizQuestions.filter(q=>q.userAns===q.correct).length, total=state.quizQuestions.length, wrong=state.quizQuestions.filter(q=>q.userAns!==q.correct);
+      if(!state.quizLogged){ logActivity(s.id,"quiz",total,score,(state.quizStartedAt?nowMs()-state.quizStartedAt:0),{}); state.quizLogged=true; writeActivity(); }
+      wrap.appendChild(el("div",{class:"quiz-summary"},[
+        el("h2",{style:"font-size:32px;margin-bottom:12px;"},["Test Bitti! 🎯"]),
+        el("div",{class:"score-big"},[score+" / "+total]),
+        el("p",{class:"score-sub"},["Başarı: %"+(total?Math.round(score/total*100):0)]),
+        el("div",{class:"cl-result-actions"},[
+          wrong.length ? el("button",{class:"cl-icon-btn",onclick:()=>{var cards=wrong.map(q=>s.cards.find(c=>c.id===q.cardId)).filter(Boolean);startStudy(s,{cards:cards,source:"custom"});}},["🔴 Yanlışları çalış ("+wrong.length+")"]) : null,
+          el("button",{class:"primary-btn",style:"border-radius:40px;padding:14px 24px;",onclick:()=>{state.mode="quiz-setup";render();}},["Yeni Test"]),
+          el("button",{class:"cl-icon-btn",onclick:()=>{state.mode="overview";render();}},["Sete dön"])
+        ]),
+        wrong.length ? el("div",{class:"cl-panel",style:"margin-top:22px;text-align:left;"},[
+          el("h3",{},["Yanlış cevapların"]),
+          ...wrong.map(q=>el("div",{class:"cl-due-card"},[
+            el("div",{},[el("div",{class:"term"},[q.prompt]),el("div",{class:"def"},["Doğru: "+q.correct])])
+          ]))
+        ]) : el("div",{class:"cl-session-note"},["Tüm sorular doğru. Temiz iş. ✨"])
+      ]));
+      return wrap;
+    }
+    wrap.appendChild(el("div",{class:"quiz-combo-indicator"},["COMBO: 🔥 "+state.quizStreak]));
+    var bars=el("div",{class:"q-top-bars"});
+    state.quizQuestions.forEach(function(item,idx){
+      var cls="q-bar-segment"+(idx===state.quizIndex?" active":"");
+      if(idx!==state.quizIndex&&item.userAns) cls+=item.userAns===item.correct?" correct":" wrong";
+      bars.appendChild(el("div",{class:cls}));
+    });
+    wrap.appendChild(bars);
+    var q=state.quizQuestions[state.quizIndex];
+    var qCard=s.cards.find(c=>c.id===q.cardId);
+    var qc=el("div",{class:"q-card"},[
+      el("button",{class:"speak-btn", style:"position:absolute; top:16px; right:16px;", onclick:e=>{e.stopPropagation(); speakText(q.prompt);}},["🔊"]),
+      el("div",{class:"q-eyebrow"},[q.label]),
+      qCard && qCard.image ? el("img",{src:qCard.image, class:"qcard-image"}) : null,
+      el("div",{class:"q-prompt"},[q.prompt])
+    ]);
+    if(q.userAns&&q.userAns!==q.correct){if(!q.encouragingText)q.encouragingText=getRandomEncouragement();qc.appendChild(el("div",{class:"encouragement-msg"},[q.encouragingText]));}
+    var opts=el("div",{class:"q-options"});
+    q.options.forEach(function(opt){
+      var cls="q-option";
+      if(q.userAns){if(opt===q.correct)cls+=" correct";else if(opt===q.userAns)cls+=" wrong";}
+      opts.appendChild(el("button",{class:cls,disabled:(q.userAns&&opt!==q.correct)?"disabled":null,onclick:()=>{
+        if(q.userAns){if(opt===q.correct){state.quizIndex++;render();}return;}
+        q.userAns=opt; var cor=opt===q.correct; updateMastery(s.id,q.cardId,cor);
+        var card=s.cards.find(c=>c.id===q.cardId); if(card){if(cor){scheduleCard(card,"orta");}else{card.lapses=(card.lapses||0)+1;card.mastery=0;card.dueAt=nowMs()+5*60000;card.lastReviewedAt=nowMs();}}
+        if(cor){playCorrectChime();state.quizStreak++;playComboAnim(state.quizStreak);setTimeout(()=>{if(state.mode==="quiz"){state.quizIndex++;render();}},650);}
+        else state.quizStreak=0;
+        persist();render();
+      }},[el("span",{},[opt]),q.userAns?el("span",{style:"font-weight:700;"},[opt===q.correct?"✓":opt===q.userAns?"✕":""]):null]));
+    });
+    qc.appendChild(opts);wrap.appendChild(qc);
+    wrap.appendChild(el("div",{class:"bottom-action-bar"},[
+      el("div",{class:"bottom-info-text"},[q.userAns?(q.userAns===q.correct?"Doğru!":"Doğru cevap yukarıda işaretlendi."):"Bir şık seç."]), 
+      q.userAns&&q.userAns!==q.correct?el("button",{class:"primary-btn",style:"border-radius:40px;padding:10px 24px;font-size:14px;",onclick:()=>{state.quizIndex++;render();}},["Devam et"]):el("div",{})
+    ]));
+    return wrap;
+  }
+
+  function renderQuizSetup(s){
+    var wrap=el("div",{class:"quiz-setup-wrap"});
+    var v=validCards(s), total=v.length;
+    wrap.appendChild(el("h2",{style:"margin-bottom:10px;font-size:32px;"},["Test Ayarları"]));
+    wrap.appendChild(el("p",{class:"cl-session-note",style:"margin-bottom:26px;"},[total+" geçerli kart · Yanlış cevaplar tekrar tarihini 5 dakikaya çeker."]));
+    var dirCont=el("div",{style:"display:flex;flex-direction:column;gap:12px;margin-bottom:28px;"});
+    [["defToTerm","Tanımı Göster → Terimi Bul"],["termToDef","Terimi Göster → Tanımı Bul"],["mixed","Karışık (Önerilen)"]].forEach(function(o){dirCont.appendChild(el("button",{class:"q-option"+(state.quizDirection===o[0]?" correct":""),onclick:()=>{state.quizDirection=o[0];render();}},[o[1]]));});
+    wrap.appendChild(dirCont);
+    var lengths=[10,20,30,50].filter(n=>n<total); if(total) lengths.push(total);
+    if(!lengths.includes(state.quizLength))state.quizLength=lengths[lengths.length-1]||10;
+    var lenCont=el("div",{style:"display:flex;gap:12px;justify-content:center;margin-bottom:30px;flex-wrap:wrap;"});
+    lengths.forEach(function(len){lenCont.appendChild(el("button",{class:"q-option"+(state.quizLength===len?" correct":""),style:"padding:12px 20px;",onclick:()=>{state.quizLength=len;render();}},[len===total?"Tümü ("+len+")":len+" Soru"]));});
+    wrap.appendChild(lenCont);
+    wrap.appendChild(el("button",{class:"primary-btn",style:"width:100%;font-size:18px;padding:20px;border-radius:16px;",onclick:()=>{
+      var pool=shuffle(v), n=Math.min(state.quizLength,pool.length), qs=[];
+      for(var i=0;i<n;i++){var c=pool[i], aT=state.quizDirection==="mixed"?Math.random()<.5:state.quizDirection==="defToTerm", p=aT?c.def:c.term,ca=aT?c.term:c.def,others=shuffle(v.filter(x=>x.id!==c.id)).slice(0,3).map(x=>aT?x.term:x.def),opts=shuffle([ca].concat(others));qs.push({cardId:c.id,prompt:p,label:aT?"Terim":"Tanım",correct:ca,options:opts,userAns:null,encouragingText:null});}
+      state.quizQuestions=qs;state.quizIndex=0;state.quizStreak=0;state.quizStartedAt=nowMs();state.quizLogged=false;state.mode="quiz";render();
+    }},["Testi Başlat ("+Math.min(state.quizLength,total)+" Soru)"]));
+    wrap.appendChild(el("div",{class:"cl-key-hint"},["Klavye: 1-4 test seçenekleri arasında gezinemez, ama Enter ile ilerleyebilirsin."]));
+    return wrap;
+  }
+
+  /* Global keyboard shortcuts */
+  if(!state._keyboardBound){
+    document.addEventListener("keydown",function(e){
+      var tag=(e.target&&e.target.tagName||"").toLowerCase();
+      if(tag==="input"||tag==="textarea"||tag==="select") return;
+      if(state.mode==="study"){
+        if(e.code==="Space"){e.preventDefault();state.studyFlipped=!state.studyFlipped;render();return;}
+        if(state.studyFlipped && ["Digit1","Digit2","Digit3","Digit4"].includes(e.code)){
+          var map={Digit1:"tekrar",Digit2:"zor",Digit3:"orta",Digit4:"kolay"}; var c=state.studyQueue[0]; if(c) handleStudyRating(map[e.code],c);
+        }
+      } else if(state.mode==="quiz"){
+        if(e.code==="Enter"){
+          var q=state.quizQuestions[state.quizIndex];
+          if(q&&q.userAns){state.quizIndex++;render();}
+        }
+      } else if(state.mode==="truefalse"){
+        if(["ArrowRight","KeyD"].includes(e.code)) answerTrueFalse(true);
+        else if(["ArrowLeft","KeyY"].includes(e.code)) answerTrueFalse(false);
+      }
+      if(e.code==="Escape" && ["study","quiz","match","quiz-setup","truefalse","charms"].includes(state.mode)){clearInterval(state.matchTimerInt);state.mode="overview";render();}
+    });
+    state._keyboardBound=true;
+  }
+
+  /* Root override to expose dashboard/statistics */
+  function render(){
+    var app=document.getElementById("app"); app.innerHTML="";
+    if(["study","quiz-setup","quiz","match","truefalse","charms"].includes(state.mode)){
+      var s=getActiveSet();
+      var content=state.mode==="study"?renderStudy(s):state.mode==="quiz-setup"?renderQuizSetup(s):state.mode==="quiz"?renderQuiz(s):state.mode==="truefalse"?renderTrueFalse(s):state.mode==="charms"?renderCharms(s):renderMatch(s);
+      app.appendChild(renderFSWrapper(content));
+    } else {
+      app.appendChild(renderSidebar());
+      var main=el("div",{class:"main"});
+      if(state.mode==="dashboard" || !getActiveSet()) main.appendChild(renderDashboard());
+      else if(state.mode==="weakmap") main.appendChild(renderWeakMap());
+      else if(state.mode==="stats") main.appendChild(renderStatsPage());
+      else if(state.mode==="edit") main.appendChild(renderEdit(getActiveSet()));
+      else main.appendChild(renderOverview(getActiveSet()));
+      app.appendChild(main);
+    }
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
