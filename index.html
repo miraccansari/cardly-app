@@ -2,16 +2,20 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<!-- Mobil Uygulama (PWA) Etiketleri - Tam Ekran ve Uygulama Görünümü İçin -->
+<!-- Gerçek Mobil Uygulama (PWA) ve Tam Ekran Etiketleri -->
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cardly">
 <meta name="application-name" content="Cardly">
+<meta name="theme-color" content="#4255FF">
 
-<title>Cardly - Vanilla</title>
+<!-- Tarayıcı çubuğunu yok eden "Standalone" Manifest Ayarı -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Cardly%22%2C%22short_name%22%3A%22Cardly%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23F6F7FB%22%2C%22theme_color%22%3A%22%234255FF%22%7D">
+
+<title>Cardly</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23000'/%3E%3Ctext x='32' y='40' font-size='28' text-anchor='middle' fill='white' font-family='Arial' font-weight='700'%3EC%2B%3C/text%3E%3C/svg%3E">
 <style>
   :root {
